@@ -8,4 +8,4 @@ This project exists to provide free resources that help people understand and op
 
 ## Free and Non-AI Usage
 
-This project is free for everyone to use, as long as non-AI tools are used.
+This project is free for everyone to use when using non-AI methods and tools (for example, manual calculation, spreadsheets, or standard software workflows rather than AI-driven tax advisory tooling).
