@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+/* Theme tokens and full dark/light theming land in Phase 5 (UI).
+   Tailwind v4's default `dark:` variant follows the system preference for now. */
+
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}

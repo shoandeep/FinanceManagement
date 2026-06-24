@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Content-Security-Policy (dev-compatible baseline).
+      Phase 6 will tighten this for the production build:
+        - remove 'unsafe-inline' from style-src (Vite injects styles inline only in dev),
+        - drop ws:/wss: from connect-src (HMR only),
+        - keep script-src 'self' with no 'unsafe-eval'.
+      Invariant kept here: NO external origins, NO remote data egress, object/base/frame locked.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none'"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>Finance Guru</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
