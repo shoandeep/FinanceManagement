@@ -1,10 +1,21 @@
 @import 'tailwindcss';
 
-/* Theme tokens and full dark/light theming land in Phase 5 (UI).
-   Tailwind v4's default `dark:` variant follows the system preference for now. */
+/* Class-based dark mode: `dark:` utilities apply when an ancestor has `.dark`.
+   ThemeProvider toggles `.dark` on <html> and respects the system preference. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   color-scheme: light dark;
+}
+
+/* Smooth, accessible focus + reduced-motion friendliness. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 
 html,
