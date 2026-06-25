@@ -189,7 +189,10 @@ h1, h2, h3, .font-display {
    glints over a faint woven thread grid. Used behind landing + app shells. */
 .weave-bg {
   position: relative;
-  background-color: hsl(var(--bg));
+  /* No opaque background here: the body provides the ground colour, so the
+     fixed z-index:-2 glint + songket layers below remain visible (an opaque
+     bg on this element would paint over its own negative-z pseudo-elements). */
+  background-color: transparent;
 }
 .weave-bg::before {
   content: '';
@@ -202,26 +205,20 @@ h1, h2, h3, .font-display {
     radial-gradient(52% 44% at 2% 102%, hsl(var(--glow-b) / 0.18), transparent 70%),
     radial-gradient(40% 38% at 100% 100%, hsl(var(--glow-a) / 0.08), transparent 70%);
 }
-/* Faint diagonal gold "thread" lattice — the woven texture, very subtle. */
+/* Songket weave — a seamless gold-thread diamond + bintang (star) motif tile.
+   Subtle on the light "kertas" ground, more present on the dark silk at night.
+   Top-down mask gives depth so it reads as cloth catching light, not wallpaper. */
 .weave-bg::after {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  opacity: 0.5;
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      hsl(var(--gold) / 0.05) 0 1px,
-      transparent 1px 22px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      hsl(var(--primary) / 0.045) 0 1px,
-      transparent 1px 22px
-    );
-  mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 92%);
+  opacity: 0.45;
+  background-image: url('/songket.svg');
+  background-size: 80px 80px;
+  background-repeat: repeat;
+  mask-image: radial-gradient(150% 140% at 50% 12%, #000 45%, transparent 100%);
 }
 .dark .weave-bg::after {
   opacity: 0.7;

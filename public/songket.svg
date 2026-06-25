@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <!-- Simple seamless songket motif: gold-thread diamond lattice woven with a
+       central "bintang" (8-point star) and gold beads at the nodes. Tiles cleanly
+       because every edge feature lands on an edge midpoint or a corner. -->
+  <g fill="none" stroke="#bd8f33" stroke-width="1">
+    <!-- diamond lattice (corners on edge midpoints) -->
+    <path d="M48 0 L96 48 L48 96 L0 48 Z" />
+    <!-- inner diamond around the star -->
+    <path d="M48 33 L63 48 L48 63 L33 48 Z" stroke-width="0.9" />
+  </g>
+  <!-- crossing warp threads (faint) -->
+  <path d="M0 0 L96 96 M96 0 L0 96" stroke="#bd8f33" stroke-width="0.6" opacity="0.5" />
+  <!-- central 8-point star -->
+  <g stroke="#cda23f" stroke-width="1.2" stroke-linecap="round">
+    <path d="M48 37 L48 59 M37 48 L59 48 M40.2 40.2 L55.8 55.8 M55.8 40.2 L40.2 55.8" />
+  </g>
+  <!-- gold beads at the woven nodes (corners + edge midpoints combine across tiles) -->
+  <g fill="#cda23f">
+    <circle cx="0" cy="0" r="1.8" /><circle cx="96" cy="0" r="1.8" />
+    <circle cx="0" cy="96" r="1.8" /><circle cx="96" cy="96" r="1.8" />
+    <circle cx="48" cy="0" r="1.4" /><circle cx="96" cy="48" r="1.4" />
+    <circle cx="48" cy="96" r="1.4" /><circle cx="0" cy="48" r="1.4" />
+    <circle cx="48" cy="48" r="1.9" />
+  </g>
+</svg>
