@@ -13,6 +13,8 @@ import {
   unlockVault,
   loadAppData,
   saveAppData,
+  changePassphrase as vaultChangePassphrase,
+  shredAll,
   WrongPassphraseError,
 } from '../db/vault';
 import { createDefaultAppData } from '../model/defaults';
@@ -47,6 +49,10 @@ interface VaultContextValue {
   unlock: (passphrase: string) => Promise<void>;
   /** Apply a mutation to the data; persists only for an account session. */
   update: (mutator: (draft: AppData) => void) => void;
+  /** Account: change the passphrase while unlocked. Throws on failure. */
+  changePassphrase: (newPassphrase: string) => Promise<void>;
+  /** Permanently delete all stored data and return to the landing page. */
+  shred: () => Promise<void>;
 }
 
 const VaultContext = createContext<VaultContextValue | null>(null);
@@ -157,6 +163,22 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const changePassphrase = useCallback(async (newPassphrase: string) => {
+    const key = keyRef.current;
+    if (!key) throw new Error('Not unlocked');
+    keyRef.current = await vaultChangePassphrase(key, newPassphrase);
+  }, []);
+
+  const shred = useCallback(async () => {
+    await shredAll();
+    keyRef.current = null;
+    setData(null);
+    setSession(null);
+    setInitialized(false);
+    setError(null);
+    setView('landing');
+  }, []);
+
   // Auto-lock an account session on inactivity (guest has nothing to protect).
   useEffect(() => {
     if (view !== 'app' || session !== 'account') return;
@@ -189,6 +211,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     initialize,
     unlock,
     update,
+    changePassphrase,
+    shred,
   };
 
   return <VaultContext.Provider value={value}>{children}</VaultContext.Provider>;

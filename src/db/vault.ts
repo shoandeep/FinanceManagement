@@ -17,7 +17,7 @@ import {
   base64ToBytes,
   PBKDF2_ITERATIONS,
 } from './crypto';
-import { metaGet, metaPut, vaultGet, vaultPut } from './db';
+import { metaGet, metaPut, vaultGet, vaultPut, closeDb, DB_NAME } from './db';
 import { SCHEMA_VERSION, type AppData } from '../model/types';
 
 const VERIFIER_PLAINTEXT = 'finance-guru:verifier:v1';
@@ -113,4 +113,41 @@ export async function loadAppData(key: CryptoKey): Promise<AppData | null> {
 export async function saveAppData(key: CryptoKey, data: AppData): Promise<void> {
   const rec = await encryptString(key, JSON.stringify(data));
   await vaultPut(rec);
+}
+
+/**
+ * Change the passphrase while unlocked. Decrypts the data with the current key,
+ * derives a NEW key from the new passphrase + a fresh salt, and re-encrypts the
+ * verifier and data. Returns the new key. (There is no recovery WITHOUT the
+ * current passphrase — by design; this requires being unlocked.)
+ */
+export async function changePassphrase(
+  currentKey: CryptoKey,
+  newPassphrase: string,
+): Promise<CryptoKey> {
+  if (!newPassphrase || newPassphrase.length < 10) {
+    throw new Error('New passphrase must be at least 10 characters.');
+  }
+  const data = await loadAppData(currentKey); // decrypt with current key first
+  const salt = generateSalt();
+  const newKey = await deriveKey(newPassphrase, salt);
+  await metaPut('kdf', {
+    salt: bytesToBase64(salt),
+    iterations: PBKDF2_ITERATIONS,
+    version: SCHEMA_VERSION,
+  });
+  await metaPut('verifier', await encryptString(newKey, VERIFIER_PLAINTEXT));
+  if (data) await saveAppData(newKey, data);
+  return newKey;
+}
+
+/** Permanently delete ALL stored data (the whole encrypted database). */
+export async function shredAll(): Promise<void> {
+  await closeDb();
+  await new Promise<void>((resolve) => {
+    const req = indexedDB.deleteDatabase(DB_NAME);
+    req.onsuccess = () => resolve();
+    req.onerror = () => resolve();
+    req.onblocked = () => resolve();
+  });
 }

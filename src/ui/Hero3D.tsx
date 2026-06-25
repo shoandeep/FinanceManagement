@@ -111,10 +111,10 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     };
     mount.addEventListener('pointermove', onPointer);
 
-    const clock = new THREE.Clock();
+    const start = performance.now();
     let raf = 0;
     const render = () => {
-      const t = clock.getElapsedTime();
+      const t = (performance.now() - start) / 1000;
       if (!reduceMotion) {
         ico.rotation.y = t * 0.35;
         ico.rotation.x = Math.sin(t * 0.4) * 0.25;
@@ -148,6 +148,9 @@ export default function Hero3D({ dark }: { dark: boolean }) {
       mount.removeEventListener('pointermove', onPointer);
       renderer.domElement.remove();
       renderer.dispose();
+      // Release the GPU context so repeated mount/unmount can't exhaust the
+      // browser's WebGL context limit.
+      renderer.forceContextLoss();
       icoGeo.dispose();
       coinGeo.dispose();
       pGeo.dispose();
