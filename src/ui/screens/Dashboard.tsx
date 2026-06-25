@@ -4,12 +4,18 @@ import { todayISO } from '../../budget/dates';
 import { formatSen } from '../../money/money';
 import { Card, Money, ProgressBar, Stat, Disclaimer } from '../components';
 
-export function Dashboard({ onGoToPay }: { onGoToPay: () => void }) {
+export function Dashboard({
+  onGoToPay,
+  onGoToSpend,
+}: {
+  onGoToPay: () => void;
+  onGoToSpend: () => void;
+}) {
   const { data } = useVault();
   if (!data) return null;
   const f = deriveFinances(data, todayISO());
 
-  const overspentToday = f.daily.leftTodaySen < 0;
+  const leftTodayNegative = f.spending.day.leftSen < 0;
 
   return (
     <div className="space-y-4">
@@ -68,33 +74,38 @@ export function Dashboard({ onGoToPay }: { onGoToPay: () => void }) {
         </div>
       </Card>
 
-      <Card title="Today's spending">
+      <Card title="Today's spending" action={<a href="#" onClick={(e) => { e.preventDefault(); onGoToSpend(); }} className="text-xs text-indigo-600 hover:underline dark:text-indigo-400">Details →</a>}>
         <div className="grid grid-cols-2 gap-4">
           <Stat
-            label="Allowance left today"
-            value={<Money sen={f.daily.leftTodaySen} signed />}
-            tone={overspentToday ? 'negative' : 'positive'}
-            sub={`Daily budget ${formatSen(f.daily.dailyAllowanceSen)} · ${f.daily.daysRemaining} days left`}
+            label="Can spend today (avg)"
+            value={<Money sen={f.spending.day.averageSen} />}
+            sub={`On pace: ${formatSen(f.spending.day.onPaceSen)}/day · ${f.spending.daysRemaining} days left`}
           />
           <Stat
-            label="Spent this month"
-            value={<Money sen={f.daily.spentMonthSen} />}
-            sub={`of ${formatSen(f.daily.variableBudgetSen)} budget`}
-            tone={f.daily.overspent ? 'negative' : 'default'}
+            label="Left today"
+            value={<Money sen={f.spending.day.leftSen} signed />}
+            tone={leftTodayNegative ? 'negative' : 'positive'}
+            sub={`Spent today ${formatSen(f.spending.day.spentSen)}`}
           />
         </div>
-        {f.daily.categories.length > 0 && (
+        <div className="mt-3 flex justify-between text-xs text-slate-400 dark:text-slate-500">
+          <span>Month to date</span>
+          <span className={f.spending.overspent ? 'text-red-500' : ''}>
+            {formatSen(f.spending.spentMonthSen)} / {formatSen(f.spending.monthlyBudgetSen)}
+          </span>
+        </div>
+        {f.spending.categories.length > 0 && (
           <ul className="mt-4 space-y-3">
-            {f.daily.categories.map((c) => {
+            {f.spending.categories.map((c) => {
               const pct =
-                c.monthlyBudgetSen > 0 ? (c.spentMonthSen / c.monthlyBudgetSen) * 100 : 0;
-              const over = c.remainingMonthSen < 0;
+                c.monthlyBudgetSen > 0 ? (c.month.spentSen / c.monthlyBudgetSen) * 100 : 0;
+              const over = c.month.leftSen < 0;
               return (
                 <li key={c.categoryId}>
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-600 dark:text-slate-300">{c.name}</span>
                     <span className={`tabular-nums ${over ? 'text-red-600 dark:text-red-400' : 'text-slate-400'}`}>
-                      {formatSen(c.spentMonthSen)} / {formatSen(c.monthlyBudgetSen)}
+                      {formatSen(c.month.spentSen)} / {formatSen(c.monthlyBudgetSen)}
                     </span>
                   </div>
                   <div className="mt-1">

@@ -44,6 +44,38 @@ export function wholeMonthsBetween(fromISO: string, toISO: string): number {
   return months;
 }
 
+/** Day-of-month (1-31) for an ISO date. */
+export function dayOfMonth(dateISO: string): number {
+  return parseISO(dateISO).day;
+}
+
+/** First day of the month for an ISO date, as 'YYYY-MM-01'. */
+export function firstOfMonthISO(dateISO: string): string {
+  return `${dateISO.slice(0, 7)}-01`;
+}
+
+/** Add `n` days to an ISO date (UTC math avoids DST drift). */
+export function addDaysISO(dateISO: string, n: number): string {
+  const { year, month, day } = parseISO(dateISO);
+  const d = new Date(Date.UTC(year, month - 1, day + n));
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
+/** Day of week with Monday = 0 … Sunday = 6. */
+export function dayOfWeekMon0(dateISO: string): number {
+  const { year, month, day } = parseISO(dateISO);
+  const dow = new Date(Date.UTC(year, month - 1, day)).getUTCDay(); // 0=Sun
+  return (dow + 6) % 7;
+}
+
+/** Monday of the week containing `dateISO`. */
+export function startOfWeekISO(dateISO: string): string {
+  return addDaysISO(dateISO, -dayOfWeekMon0(dateISO));
+}
+
 /** Today's local date as 'YYYY-MM-DD' (runtime use; tests pass explicit dates). */
 export function todayISO(now: Date = new Date()): string {
   const y = now.getFullYear();

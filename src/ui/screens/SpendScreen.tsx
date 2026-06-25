@@ -4,11 +4,47 @@ import { deriveFinances } from '../../state/selectors';
 import { todayISO } from '../../budget/dates';
 import { newId } from '../../model/defaults';
 import { formatSen, type Sen } from '../../money/money';
+import type { SpendPeriod } from '../../budget/spendingPlan';
 import { Card, Money, MoneyInput, TextInput, Select, Button, Stat, ProgressBar, Disclaimer } from '../components';
+
+const PERIODS: { id: SpendPeriod; label: string }[] = [
+  { id: 'day', label: 'Daily' },
+  { id: 'week', label: 'Weekly' },
+  { id: 'month', label: 'Monthly' },
+];
+const NOUN: Record<SpendPeriod, string> = { day: 'today', week: 'this week', month: 'this month' };
+const UNIT: Record<SpendPeriod, string> = { day: 'day', week: 'week', month: 'month' };
+
+/** Segmented "slider" to switch period. */
+function PeriodSlider({ value, onChange }: { value: SpendPeriod; onChange: (p: SpendPeriod) => void }) {
+  const index = PERIODS.findIndex((p) => p.id === value);
+  return (
+    <div className="relative grid grid-cols-3 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+      <div
+        className="absolute inset-y-1 w-[calc((100%-0.5rem)/3)] rounded-lg bg-white shadow-sm transition-transform duration-300 dark:bg-slate-950"
+        style={{ transform: `translateX(${index * 100}%)` }}
+        aria-hidden
+      />
+      {PERIODS.map((p) => (
+        <button
+          key={p.id}
+          onClick={() => onChange(p.id)}
+          aria-pressed={value === p.id}
+          className={`relative z-10 rounded-lg py-1.5 text-sm font-medium transition ${
+            value === p.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function SpendScreen() {
   const { data, update } = useVault();
   const today = todayISO();
+  const [period, setPeriod] = useState<SpendPeriod>('day');
   const [amount, setAmount] = useState<Sen>(0);
   const [categoryId, setCategoryId] = useState<string>('');
   const [date, setDate] = useState<string>(today);
@@ -16,6 +52,8 @@ export function SpendScreen() {
 
   if (!data) return null;
   const f = deriveFinances(data, today);
+  const plan = f.spending;
+  const m = plan[period]; // metrics for the selected period
   const cats = data.variableCategories;
   const activeCat = categoryId || cats[0]?.id || '';
 
@@ -43,26 +81,59 @@ export function SpendScreen() {
 
   return (
     <div className="space-y-4">
-      <Card title="Today's allowance">
-        <div className="grid grid-cols-2 gap-4">
+      <Card title="Spending plan">
+        <PeriodSlider value={period} onChange={setPeriod} />
+        <div className="mt-4 grid grid-cols-2 gap-4">
           <Stat
-            label="Left today"
-            value={<Money sen={f.daily.leftTodaySen} signed />}
-            tone={f.daily.leftTodaySen < 0 ? 'negative' : 'positive'}
-            sub={`Daily budget ${formatSen(f.daily.dailyAllowanceSen)}`}
+            label={`Average per ${UNIT[period]}`}
+            value={<Money sen={m.averageSen} />}
+            sub={`of ${formatSen(plan.monthlyBudgetSen)} / month`}
           />
           <Stat
-            label="Spent today"
-            value={<Money sen={f.daily.spentTodaySen} />}
-            sub={`${f.daily.daysRemaining} days left in month`}
+            label={`Left ${NOUN[period]}`}
+            value={<Money sen={m.leftSen} signed />}
+            tone={m.leftSen < 0 ? 'negative' : 'positive'}
+            sub={`Spent ${formatSen(m.spentSen)}`}
           />
         </div>
-        <div className="mt-3 flex justify-between text-xs text-slate-400 dark:text-slate-500">
+        <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+          To stay on budget you can spend{' '}
+          <strong className="text-slate-700 dark:text-slate-200">{formatSen(m.onPaceSen)}</strong> this{' '}
+          {UNIT[period]} (uses the remaining {formatSen(plan.remainingMonthSen)} over the{' '}
+          {plan.daysRemaining} day{plan.daysRemaining === 1 ? '' : 's'} left).
+        </div>
+        <div className="mt-2 flex justify-between text-xs text-slate-400 dark:text-slate-500">
           <span>Month to date</span>
-          <span className={f.daily.overspent ? 'text-red-500' : ''}>
-            {formatSen(f.daily.spentMonthSen)} / {formatSen(f.daily.variableBudgetSen)}
+          <span className={plan.overspent ? 'text-red-500' : ''}>
+            {formatSen(plan.spentMonthSen)} / {formatSen(plan.monthlyBudgetSen)}
           </span>
         </div>
+      </Card>
+
+      <Card title={`By category · ${PERIODS.find((p) => p.id === period)!.label.toLowerCase()}`}>
+        <ul className="space-y-3">
+          {plan.categories.map((c) => {
+            const cm = c[period];
+            const avg = cm.averageSen;
+            const pct = avg > 0 ? Math.min(100, (cm.spentSen / avg) * 100) : 0;
+            const over = cm.leftSen < 0;
+            return (
+              <li key={c.categoryId}>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-700 dark:text-slate-200">{c.name}</span>
+                  <span
+                    className={`tabular-nums ${over ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}
+                  >
+                    {formatSen(cm.spentSen)} / {formatSen(avg)}
+                  </span>
+                </div>
+                <div className="mt-1">
+                  <ProgressBar value={pct} tone={over ? 'amber' : 'indigo'} label={`${c.name} spent`} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </Card>
 
       <Card title="Log an expense">
@@ -75,11 +146,7 @@ export function SpendScreen() {
           </label>
           <label className="text-xs text-slate-500 dark:text-slate-400">
             Category
-            <Select
-              className="mt-1"
-              value={activeCat}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
+            <Select className="mt-1" value={activeCat} onChange={(e) => setCategoryId(e.target.value)}>
               {cats.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -105,30 +172,6 @@ export function SpendScreen() {
         <Button variant="primary" className="mt-3 w-full" onClick={logExpense} disabled={amount <= 0}>
           Add expense
         </Button>
-      </Card>
-
-      <Card title="Per-category allowance">
-        <ul className="space-y-3">
-          {f.daily.categories.map((c) => {
-            const pct = c.monthlyBudgetSen > 0 ? (c.spentMonthSen / c.monthlyBudgetSen) * 100 : 0;
-            const over = c.remainingMonthSen < 0;
-            return (
-              <li key={c.categoryId}>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-700 dark:text-slate-200">{c.name}</span>
-                  <span
-                    className={`tabular-nums ${over ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}
-                  >
-                    {formatSen(c.dailyAllowanceSen)}/day
-                  </span>
-                </div>
-                <div className="mt-1">
-                  <ProgressBar value={pct} tone={over ? 'amber' : 'indigo'} label={`${c.name} spent`} />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
       </Card>
 
       <Card title={`This month's expenses (${monthExpenses.length})`}>
@@ -222,11 +265,14 @@ export function SpendScreen() {
         <p
           className={`mt-2 text-xs ${shareSum === 100 ? 'text-slate-400 dark:text-slate-500' : 'text-amber-600 dark:text-amber-400'}`}
         >
-          Shares total {shareSum}% of the {formatSen(f.daily.variableBudgetSen)} variable budget.
+          Shares total {shareSum}% of the {formatSen(plan.monthlyBudgetSen)} variable budget.
         </p>
       </Card>
 
-      <Disclaimer>Daily allowance recomputes live as you log expenses and as the month progresses.</Disclaimer>
+      <Disclaimer>
+        Average shows an even split of your monthly budget (it won’t spike late in the month). “On
+        pace” distributes whatever budget is left over the days remaining.
+      </Disclaimer>
     </div>
   );
 }

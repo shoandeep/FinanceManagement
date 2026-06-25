@@ -14,7 +14,7 @@ import {
   type EmergencyFundStatus,
   type GoalStatus,
 } from '../budget/budget';
-import { computeDailyBudget, type DailyBudget } from '../budget/dailySpend';
+import { computeSpendingPlan, type SpendingPlan } from '../budget/spendingPlan';
 import type { AppData } from '../model/types';
 import type { Sen } from '../money/money';
 
@@ -27,7 +27,7 @@ export interface Finances {
   emergency: EmergencyFundStatus;
   goals: GoalStatus[];
   investmentsTotalSen: Sen;
-  daily: DailyBudget;
+  spending: SpendingPlan;
 }
 
 export function deriveFinances(data: AppData, todayISO: string): Finances {
@@ -50,7 +50,7 @@ export function deriveFinances(data: AppData, todayISO: string): Finances {
     allocation.variableSen,
     allocation.savingsSen,
   );
-  const daily = computeDailyBudget(
+  const spending = computeSpendingPlan(
     allocation.variableSen,
     data.variableCategories,
     data.expenses,
@@ -66,6 +66,6 @@ export function deriveFinances(data: AppData, todayISO: string): Finances {
     emergency,
     goals: data.goals.map((g) => goalStatus(g, todayISO)),
     investmentsTotalSen: investmentsTotalSen(data.investments),
-    daily,
+    spending,
   };
 }

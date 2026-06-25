@@ -19,8 +19,10 @@ dynamic daily spending allowance. Minimalist, fast, dark/light, mobile-first.
   Savings / Investments / Variable by your own editable percentages.
 - **Emergency fund & goals.** Target = N months of essential expenses; named goals
   with deadlines and a suggested monthly contribution; investment-pot tracking.
-- **Dynamic daily spend.** `(monthly variable budget − spent) ÷ days left`,
-  recomputed live per category and in total, with overspend and clean month rollover.
+- **Spending plan.** A stable **average** daily / weekly / monthly allowance (an even
+  split of the monthly budget, so it won't balloon late in the month) plus the
+  dynamic **on-pace** figure and what's **left** per period — switchable with a
+  slider, per category, with overspend and clean month rollover.
 - **Encrypted & private.** AES-GCM at rest behind a passphrase; nothing leaves the
   device.
 
@@ -50,7 +52,7 @@ npm run test:coverage  # coverage summary for calc + budget modules
 npm run test:e2e    # Playwright happy-path E2E (needs: npx playwright install chromium)
 ```
 
-- **63 unit tests** across the safety-critical modules:
+- **73 unit tests** across the safety-critical modules:
   - **Calc** (`src/core`, `src/money`): EPF, SOCSO, EIS, progressive PCB, net pay —
     asserted against fixed oracles (EPF RM550, SOCSO RM29.75, EIS RM11.90, tax
     RM3,890 / rebate RM185, band boundaries, overrides). ~99% statement coverage.
