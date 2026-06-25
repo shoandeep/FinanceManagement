@@ -2,16 +2,18 @@ import { test, expect } from '@playwright/test';
 
 const PASSPHRASE = 'e2e-passphrase-123';
 
-test('create vault → compute net pay → log expense → persists across reload', async ({ page }) => {
+test('landing → save on device → net pay → log expense → persists across reload', async ({ page }) => {
   // A fresh Playwright context starts with empty IndexedDB, so this is first-run.
   await page.goto('/');
 
-  // First run: create a passphrase.
+  // Landing page → choose to save on this device → create a passphrase.
+  await expect(page.getByRole('heading', { name: /salary becomes/i })).toBeVisible();
+  await page.getByRole('button', { name: 'Save on this device' }).click();
   await page.getByLabel('Passphrase', { exact: true }).fill(PASSPHRASE);
   await page.getByLabel('Confirm passphrase').fill(PASSPHRASE);
   await page.getByRole('button', { name: 'Create & unlock' }).click();
 
-  // Unlocked: the app header is shown.
+  // In the app.
   await expect(page.getByRole('heading', { name: 'Finance Guru' })).toBeVisible();
 
   // Enter gross pay and verify the statutory estimate + net pay.
@@ -28,8 +30,24 @@ test('create vault → compute net pay → log expense → persists across reloa
 
   // Reload: data is encrypted at rest; unlocking must restore it.
   await page.reload();
+  await page.getByRole('button', { name: 'Unlock my saved data' }).click();
   await page.getByLabel('Passphrase', { exact: true }).fill(PASSPHRASE);
   await page.getByRole('button', { name: 'Unlock' }).click();
   await page.getByRole('button', { name: 'Spend', exact: true }).click();
   await expect(page.getByText("This month's expenses (1)")).toBeVisible();
+});
+
+test('guest mode is ephemeral — nothing persists after reload', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Try it now — no signup' }).click();
+
+  // Guest banner is shown and data is not saved.
+  await expect(page.getByText('Guest mode — nothing is saved.')).toBeVisible();
+  await page.getByRole('button', { name: 'Pay', exact: true }).click();
+  await page.getByLabel('Gross monthly pay').fill('8000');
+  await expect(page.getByText('RM6,564.18')).toBeVisible();
+
+  // After reload we return to the landing as a first-time user (no saved vault).
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Save on this device' })).toBeVisible();
 });

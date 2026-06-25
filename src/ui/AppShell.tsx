@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useVault } from '../state/VaultContext';
-import { useTheme } from './theme';
+import { ThemeToggle } from './ThemeToggle';
 import { Dashboard } from './screens/Dashboard';
 import { PayScreen } from './screens/PayScreen';
 import { CostsScreen } from './screens/CostsScreen';
@@ -17,30 +17,8 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'spend', label: 'Spend', icon: '◷' },
 ];
 
-function ThemeToggle() {
-  const { resolved, toggle } = useTheme();
-  return (
-    <button
-      onClick={toggle}
-      aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} mode`}
-      className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-    >
-      {resolved === 'dark' ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" />
-        </svg>
-      ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-        </svg>
-      )}
-    </button>
-  );
-}
-
 export function AppShell() {
-  const { lock } = useVault();
+  const { exit, goToAuth, session } = useVault();
   const [tab, setTab] = useState<TabId>('home');
 
   const screens: Record<TabId, ReactNode> = {
@@ -57,15 +35,28 @@ export function AppShell() {
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <h1 className="text-base font-semibold tracking-tight">Finance Guru</h1>
           <div className="flex items-center gap-1">
-            <ThemeToggle />
+            <ThemeToggle size={34} />
             <button
-              onClick={lock}
+              onClick={exit}
               className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
-              Lock
+              {session === 'account' ? 'Lock' : 'Exit'}
             </button>
           </div>
         </div>
+        {session === 'guest' && (
+          <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 pb-2 text-xs">
+            <span className="text-amber-600 dark:text-amber-400">
+              Guest mode — nothing is saved.
+            </span>
+            <button
+              onClick={goToAuth}
+              className="shrink-0 rounded-md bg-amber-500/15 px-2.5 py-1 font-medium text-amber-700 transition hover:bg-amber-500/25 dark:text-amber-300"
+            >
+              Save on this device
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-lg px-4 pb-28 pt-4">{screens[tab]}</main>
@@ -88,7 +79,7 @@ export function AppShell() {
                       : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                   }`}
                 >
-                  <span aria-hidden="true" className="text-base leading-none">
+                  <span aria-hidden="true" className="text-base leading-none transition group-hover:scale-110">
                     {t.icon}
                   </span>
                   {t.label}

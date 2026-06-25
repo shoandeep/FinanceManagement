@@ -18,56 +18,89 @@ import {
 import { createDefaultAppData } from '../model/defaults';
 import type { AppData } from '../model/types';
 
-export type VaultStatus = 'loading' | 'locked' | 'unlocked';
+/** Where the user is in the app. */
+export type AppView = 'loading' | 'landing' | 'auth' | 'app';
+/** How the current session persists. */
+export type Session = 'guest' | 'account';
 
-/** Auto-lock after this many minutes of inactivity. */
+/** Auto-lock an account session after this many minutes of inactivity. */
 export const DEFAULT_AUTO_LOCK_MINUTES = 5;
 
 interface VaultContextValue {
-  status: VaultStatus;
+  view: AppView;
+  session: Session | null;
+  /** True if a saved (encrypted) vault already exists on this device. */
   initialized: boolean;
   busy: boolean;
   error: string | null;
   data: AppData | null;
   autoLockMinutes: number;
-  setAutoLockMinutes: (n: number) => void;
+  /** Navigation. */
+  goToAuth: () => void;
+  backToLanding: () => void;
+  startGuest: () => void;
+  /** Leave the app back to the landing page, clearing in-memory state. */
+  exit: () => void;
+  /** Account: create the encrypted vault (seeded from current data if any). */
   initialize: (passphrase: string) => Promise<void>;
+  /** Account: unlock an existing encrypted vault. */
   unlock: (passphrase: string) => Promise<void>;
-  lock: () => void;
-  /** Apply a mutation to a draft copy of the data and persist it (encrypted). */
+  /** Apply a mutation to the data; persists only for an account session. */
   update: (mutator: (draft: AppData) => void) => void;
 }
 
 const VaultContext = createContext<VaultContextValue | null>(null);
 
 export function VaultProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<VaultStatus>('loading');
+  const [view, setView] = useState<AppView>('loading');
+  const [session, setSession] = useState<Session | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AppData | null>(null);
-  const [autoLockMinutes, setAutoLockMinutes] = useState(DEFAULT_AUTO_LOCK_MINUTES);
+  const [autoLockMinutes] = useState(DEFAULT_AUTO_LOCK_MINUTES);
 
   // The unlocked key lives only in memory (a ref), never in React state/storage.
   const keyRef = useRef<CryptoKey | null>(null);
+  // Keep the latest data available to initialize() without stale closures.
+  const dataRef = useRef<AppData | null>(null);
+  dataRef.current = data;
 
   useEffect(() => {
     let active = true;
     vaultIsInitialized().then((init) => {
       if (!active) return;
       setInitialized(init);
-      setStatus('locked');
+      setView('landing');
     });
     return () => {
       active = false;
     };
   }, []);
 
-  const lock = useCallback(() => {
+  const exit = useCallback(() => {
     keyRef.current = null;
     setData(null);
+    setSession(null);
     setError(null);
-    setStatus('locked');
+    setView('landing');
+  }, []);
+
+  const goToAuth = useCallback(() => {
+    setError(null);
+    setView('auth');
+  }, []);
+
+  const backToLanding = useCallback(() => {
+    setError(null);
+    setView('landing');
+  }, []);
+
+  const startGuest = useCallback(() => {
+    setData((current) => current ?? createDefaultAppData());
+    setSession('guest');
+    setError(null);
+    setView('app');
   }, []);
 
   const initialize = useCallback(async (passphrase: string) => {
@@ -75,12 +108,14 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const key = await initializeVault(passphrase);
-      const fresh = createDefaultAppData();
-      await saveAppData(key, fresh);
+      // Seed from any data the user already entered as a guest.
+      const seed = dataRef.current ?? createDefaultAppData();
+      await saveAppData(key, seed);
       keyRef.current = key;
-      setData(fresh);
+      setData(seed);
       setInitialized(true);
-      setStatus('unlocked');
+      setSession('account');
+      setView('app');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create vault');
     } finally {
@@ -100,7 +135,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       }
       keyRef.current = key;
       setData(loaded);
-      setStatus('unlocked');
+      setSession('account');
+      setView('app');
     } catch (e) {
       if (e instanceof WrongPassphraseError) setError('Incorrect passphrase.');
       else setError(e instanceof Error ? e.message : 'Failed to unlock');
@@ -115,18 +151,19 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       const draft = structuredClone(current);
       mutator(draft);
       const key = keyRef.current;
-      if (key) void saveAppData(key, draft); // persist (encrypted) in the background
+      // Persist ONLY for an account session; guest data stays in memory.
+      if (key) void saveAppData(key, draft);
       return draft;
     });
   }, []);
 
-  // Auto-lock on inactivity.
+  // Auto-lock an account session on inactivity (guest has nothing to protect).
   useEffect(() => {
-    if (status !== 'unlocked') return;
+    if (view !== 'app' || session !== 'account') return;
     let timer: ReturnType<typeof setTimeout>;
     const reset = () => {
       clearTimeout(timer);
-      timer = setTimeout(lock, autoLockMinutes * 60_000);
+      timer = setTimeout(exit, autoLockMinutes * 60_000);
     };
     const events = ['mousemove', 'keydown', 'pointerdown', 'touchstart', 'scroll'] as const;
     events.forEach((ev) => window.addEventListener(ev, reset, { passive: true }));
@@ -135,19 +172,22 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       clearTimeout(timer);
       events.forEach((ev) => window.removeEventListener(ev, reset));
     };
-  }, [status, autoLockMinutes, lock]);
+  }, [view, session, autoLockMinutes, exit]);
 
   const value: VaultContextValue = {
-    status,
+    view,
+    session,
     initialized,
     busy,
     error,
     data,
     autoLockMinutes,
-    setAutoLockMinutes,
+    goToAuth,
+    backToLanding,
+    startGuest,
+    exit,
     initialize,
     unlock,
-    lock,
     update,
   };
 

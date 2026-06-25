@@ -6,7 +6,7 @@ import { useVault } from '../state/VaultContext';
  * (create a passphrase) and subsequent unlocks.
  */
 export function LockScreen() {
-  const { initialized, busy, error, initialize, unlock } = useVault();
+  const { initialized, busy, error, initialize, unlock, backToLanding, data } = useVault();
   const pwId = useId();
   const confirmId = useId();
   const [passphrase, setPassphrase] = useState('');
@@ -42,6 +42,13 @@ export function LockScreen() {
         className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900"
         aria-labelledby="lock-title"
       >
+        <button
+          type="button"
+          onClick={backToLanding}
+          className="mb-3 text-sm text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-300"
+        >
+          ← Back
+        </button>
         <h1 id="lock-title" className="text-xl font-semibold tracking-tight">
           {creating ? 'Create your passphrase' : 'Unlock Finance Guru'}
         </h1>
@@ -50,6 +57,11 @@ export function LockScreen() {
             ? 'Your data is encrypted on this device with this passphrase. There is no recovery if you lose it.'
             : 'Enter your passphrase to decrypt your data.'}
         </p>
+        {creating && data && (data.pay.grossSen > 0 || data.fixedCosts.length > 0) && (
+          <p className="mt-2 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+            Your current entries will be encrypted and saved.
+          </p>
+        )}
 
         <div className="mt-5">
           <label htmlFor={pwId} className="block text-sm font-medium">
