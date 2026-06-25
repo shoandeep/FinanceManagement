@@ -24,7 +24,12 @@ dynamic daily spending allowance. Minimalist, fast, dark/light, mobile-first.
   dynamic **on-pace** figure and what's **left** per period — switchable with a
   slider, per category, with overspend and clean month rollover.
 - **Encrypted & private.** AES-GCM at rest behind a passphrase; nothing leaves the
-  device.
+  device. Guest mode saves nothing at all.
+- **Installable PWA.** Add to your home screen on Android (app drawer) and iPhone;
+  works offline.
+- **Settings.** Export Income / Expenses / Cashflow as Excel-compatible CSV, change
+  your passphrase, or shred all data. Responsive desktop layout with a sidebar;
+  mobile stays a single-column, bottom-nav app.
 
 ## Stack
 

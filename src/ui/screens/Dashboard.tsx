@@ -18,9 +18,9 @@ export function Dashboard({
   const leftTodayNegative = f.spending.day.leftSen < 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:columns-2 lg:gap-4 lg:space-y-0">
       {data.pay.grossSen === 0 && (
-        <Card>
+        <Card className="break-inside-avoid lg:mb-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-slate-600 dark:text-slate-300">
               Start by entering your gross monthly pay.
@@ -35,7 +35,7 @@ export function Dashboard({
         </Card>
       )}
 
-      <Card>
+      <Card className="break-inside-avoid lg:mb-4">
         <div className="flex items-end justify-between">
           <Stat
             label="Estimated net pay / month"
@@ -52,7 +52,7 @@ export function Dashboard({
         </div>
       </Card>
 
-      <Card title="Emergency fund">
+      <Card title="Emergency fund" className="break-inside-avoid lg:mb-4">
         <div className="flex items-center justify-between">
           <Stat
             label={`${f.emergency.monthsCovered.toFixed(1)} of ${data.emergencyFund.months} months covered`}
@@ -74,7 +74,7 @@ export function Dashboard({
         </div>
       </Card>
 
-      <Card title="Today's spending" action={<a href="#" onClick={(e) => { e.preventDefault(); onGoToSpend(); }} className="text-xs text-indigo-600 hover:underline dark:text-indigo-400">Details →</a>}>
+      <Card title="Today's spending" className="break-inside-avoid lg:mb-4" action={<a href="#" onClick={(e) => { e.preventDefault(); onGoToSpend(); }} className="text-xs text-indigo-600 hover:underline dark:text-indigo-400">Details →</a>}>
         <div className="grid grid-cols-2 gap-4">
           <Stat
             label="Can spend today (avg)"
@@ -118,10 +118,12 @@ export function Dashboard({
         )}
       </Card>
 
-      <Disclaimer>
-        Estimates only — not financial or tax advice. Confirm against your payslip and LHDN / KWSP /
-        PERKESO.
-      </Disclaimer>
+      <div className="break-inside-avoid">
+        <Disclaimer>
+          Estimates only — not financial or tax advice. Confirm against your payslip and LHDN / KWSP /
+          PERKESO.
+        </Disclaimer>
+      </div>
     </div>
   );
 }

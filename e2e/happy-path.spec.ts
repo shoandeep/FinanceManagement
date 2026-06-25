@@ -13,8 +13,8 @@ test('landing → save on device → net pay → log expense → persists across
   await page.getByLabel('Confirm passphrase').fill(PASSPHRASE);
   await page.getByRole('button', { name: 'Create & unlock' }).click();
 
-  // In the app.
-  await expect(page.getByRole('heading', { name: 'Finance Guru' })).toBeVisible();
+  // In the app (dashboard).
+  await expect(page.getByText("Today's spending")).toBeVisible();
 
   // Enter gross pay and verify the statutory estimate + net pay.
   await page.getByRole('button', { name: 'Pay', exact: true }).click();
@@ -41,8 +41,8 @@ test('guest mode is ephemeral — nothing persists after reload', async ({ page 
   await page.goto('/');
   await page.getByRole('button', { name: 'Try it now — no signup' }).click();
 
-  // Guest banner is shown and data is not saved.
-  await expect(page.getByText('Guest mode — nothing is saved.')).toBeVisible();
+  // Guest banner is shown (sidebar on desktop / header on mobile) and data is not saved.
+  await expect(page.getByText('Guest mode — nothing is saved.').first()).toBeVisible();
   await page.getByRole('button', { name: 'Pay', exact: true }).click();
   await page.getByLabel('Gross monthly pay').fill('8000');
   await expect(page.getByText('RM6,564.18')).toBeVisible();
