@@ -28,11 +28,11 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     // Palette — gold thread on jewel-tone silk. Two accent tones per theme.
     const GOLD = 0xe8b23a;
     const GOLD_BRIGHT = 0xf6cf63;
-    const TEAL = dark ? 0x2dd4bf : 0x117b6e;
-    const CORE = dark ? 0x0e2b2b : 0x0c5149;
+    const TEAL = dark ? 0x2dd4bf : 0x17b39c;
+    const CORE = dark ? 0x0e2b2b : 0x1f9e88; // luminous jade in light so the gem isn't near-black
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(dark ? 0x07100f : 0xece3d2, 0.035);
+    scene.fog = new THREE.FogExp2(dark ? 0x07100f : 0xf5eedd, dark ? 0.035 : 0.024);
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
     camera.position.set(0, 0, 9.5);
@@ -43,7 +43,7 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     mount.appendChild(renderer.domElement);
 
     // ---------------------------------------------------------------- lights
-    scene.add(new THREE.AmbientLight(0xffffff, dark ? 0.45 : 0.7));
+    scene.add(new THREE.AmbientLight(0xffffff, dark ? 0.45 : 1.0));
     const key = new THREE.DirectionalLight(0xfff4e0, 1.25);
     key.position.set(4, 6, 6);
     scene.add(key);
@@ -77,7 +77,7 @@ export default function Hero3D({ dark }: { dark: boolean }) {
           roughness: 0.3,
           flatShading: true,
           emissive: new THREE.Color(TEAL),
-          emissiveIntensity: dark ? 0.18 : 0.08,
+          emissiveIntensity: dark ? 0.18 : 0.14,
         }),
       ),
     );
@@ -150,7 +150,7 @@ export default function Hero3D({ dark }: { dark: boolean }) {
         metalness: 0.92,
         roughness: 0.26,
         emissive: new THREE.Color(GOLD),
-        emissiveIntensity: 0.1,
+        emissiveIntensity: dark ? 0.1 : 0.24,
       }),
     );
     const coins: { mesh: THREE.Mesh; radius: number; speed: number; phase: number; tilt: number; yBob: number }[] = [];
@@ -183,7 +183,7 @@ export default function Hero3D({ dark }: { dark: boolean }) {
       pGeo,
       track(
         new THREE.PointsMaterial({
-          color: dark ? TEAL : 0x9c7a2e,
+          color: dark ? TEAL : 0xcf9f3a,
           size: 0.055,
           transparent: true,
           opacity: 0.6,
