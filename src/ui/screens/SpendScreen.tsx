@@ -19,9 +19,9 @@ const UNIT: Record<SpendPeriod, string> = { day: 'day', week: 'week', month: 'mo
 function PeriodSlider({ value, onChange }: { value: SpendPeriod; onChange: (p: SpendPeriod) => void }) {
   const index = PERIODS.findIndex((p) => p.id === value);
   return (
-    <div className="relative grid grid-cols-3 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+    <div className="relative grid grid-cols-3 rounded-xl bg-surface-2 p-1 ring-1 ring-inset ring-line">
       <div
-        className="absolute inset-y-1 w-[calc((100%-0.5rem)/3)] rounded-lg bg-white shadow-sm transition-transform duration-300 dark:bg-slate-950"
+        className="absolute inset-y-1 w-[calc((100%-0.5rem)/3)] rounded-lg bg-primary shadow-sm transition-transform duration-300"
         style={{ transform: `translateX(${index * 100}%)` }}
         aria-hidden
       />
@@ -30,8 +30,8 @@ function PeriodSlider({ value, onChange }: { value: SpendPeriod; onChange: (p: S
           key={p.id}
           onClick={() => onChange(p.id)}
           aria-pressed={value === p.id}
-          className={`relative z-10 rounded-lg py-1.5 text-sm font-medium transition ${
-            value === p.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
+          className={`relative z-10 rounded-lg py-1.5 text-sm font-semibold transition ${
+            value === p.id ? 'text-primary-contrast' : 'text-ink-faint hover:text-ink'
           }`}
         >
           {p.label}
@@ -96,15 +96,15 @@ export function SpendScreen() {
             sub={`Spent ${formatSen(m.spentSen)}`}
           />
         </div>
-        <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+        <div className="mt-3 rounded-lg border border-gold/15 bg-gold/[0.06] px-3 py-2 text-xs text-ink-soft">
           To stay on budget you can spend{' '}
-          <strong className="text-slate-700 dark:text-slate-200">{formatSen(m.onPaceSen)}</strong> this{' '}
+          <strong className="text-gold">{formatSen(m.onPaceSen)}</strong> this{' '}
           {UNIT[period]} (uses the remaining {formatSen(plan.remainingMonthSen)} over the{' '}
           {plan.daysRemaining} day{plan.daysRemaining === 1 ? '' : 's'} left).
         </div>
-        <div className="mt-2 flex justify-between text-xs text-slate-400 dark:text-slate-500">
+        <div className="mt-2 flex justify-between text-xs text-ink-faint">
           <span>Month to date</span>
-          <span className={plan.overspent ? 'text-red-500' : ''}>
+          <span className={plan.overspent ? 'text-negative' : ''}>
             {formatSen(plan.spentMonthSen)} / {formatSen(plan.monthlyBudgetSen)}
           </span>
         </div>
@@ -120,9 +120,9 @@ export function SpendScreen() {
             return (
               <li key={c.categoryId}>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-700 dark:text-slate-200">{c.name}</span>
+                  <span className="text-ink-soft">{c.name}</span>
                   <span
-                    className={`tabular-nums ${over ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}
+                    className={`tabular-nums ${over ? 'text-negative' : 'text-ink-faint'}`}
                   >
                     {formatSen(cm.spentSen)} / {formatSen(avg)}
                   </span>
@@ -138,13 +138,13 @@ export function SpendScreen() {
 
       <Card title="Log an expense">
         <div className="grid grid-cols-2 gap-2">
-          <label className="text-xs text-slate-500 dark:text-slate-400">
+          <label className="text-xs text-ink-soft">
             Amount
             <div className="mt-1">
               <MoneyInput valueSen={amount} onChangeSen={setAmount} />
             </div>
           </label>
-          <label className="text-xs text-slate-500 dark:text-slate-400">
+          <label className="text-xs text-ink-soft">
             Category
             <Select className="mt-1" value={activeCat} onChange={(e) => setCategoryId(e.target.value)}>
               {cats.map((c) => (
@@ -154,17 +154,17 @@ export function SpendScreen() {
               ))}
             </Select>
           </label>
-          <label className="text-xs text-slate-500 dark:text-slate-400">
+          <label className="text-xs text-ink-soft">
             Date
             <input
               type="date"
               value={date}
               max={today}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-950"
+              className="mt-1 w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
             />
           </label>
-          <label className="text-xs text-slate-500 dark:text-slate-400">
+          <label className="text-xs text-ink-soft">
             Note (optional)
             <TextInput className="mt-1" value={note} onChange={(e) => setNote(e.target.value)} />
           </label>
@@ -176,17 +176,17 @@ export function SpendScreen() {
 
       <Card title={`This month's expenses (${monthExpenses.length})`}>
         {monthExpenses.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">Nothing logged this month.</p>
+          <p className="text-sm text-ink-faint">Nothing logged this month.</p>
         ) : (
-          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+          <ul className="divide-y divide-line">
             {monthExpenses.map((e) => (
               <li key={e.id} className="flex items-center justify-between gap-2 py-2 text-sm">
                 <div className="min-w-0">
-                  <p className="truncate text-slate-700 dark:text-slate-200">
+                  <p className="truncate text-ink-soft">
                     {catName(e.categoryId)}
-                    {e.note ? <span className="text-slate-400"> · {e.note}</span> : null}
+                    {e.note ? <span className="text-ink-faint"> · {e.note}</span> : null}
                   </p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">{e.dateISO}</p>
+                  <p className="text-xs text-ink-faint">{e.dateISO}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="tabular-nums">{formatSen(e.amountSen)}</span>
@@ -245,9 +245,9 @@ export function SpendScreen() {
                       if (item) item.sharePercent = Math.max(0, Math.min(100, Number(e.target.value) || 0));
                     })
                   }
-                  className="w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-right text-sm tabular-nums outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-950"
+                  className="w-full rounded-lg border border-line-strong bg-surface-2 px-2 py-2 text-right text-sm tabular-nums text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
                 />
-                <span className="text-sm text-slate-400">%</span>
+                <span className="text-sm text-ink-faint">%</span>
               </div>
               <Button
                 variant="danger"
@@ -263,7 +263,7 @@ export function SpendScreen() {
           ))}
         </ul>
         <p
-          className={`mt-2 text-xs ${shareSum === 100 ? 'text-slate-400 dark:text-slate-500' : 'text-amber-600 dark:text-amber-400'}`}
+          className={`mt-2 text-xs ${shareSum === 100 ? 'text-ink-faint' : 'text-warning'}`}
         >
           Shares total {shareSum}% of the {formatSen(plan.monthlyBudgetSen)} variable budget.
         </p>

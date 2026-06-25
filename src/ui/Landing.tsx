@@ -7,7 +7,7 @@ const Hero3D = lazy(() => import('./Hero3D'));
 
 function HeroFallback() {
   return (
-    <div className="h-full w-full animate-pulse rounded-3xl bg-gradient-to-br from-indigo-500/20 to-amber-400/20" />
+    <div className="h-full w-full animate-pulse rounded-3xl bg-gradient-to-br from-primary/15 to-gold/15" />
   );
 }
 
@@ -39,20 +39,10 @@ export function Landing() {
   const { resolved } = useTheme();
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      {/* ambient gradient */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 opacity-70"
-        style={{
-          background:
-            'radial-gradient(60% 50% at 80% 0%, rgba(99,102,241,.18), transparent), radial-gradient(50% 40% at 0% 100%, rgba(251,191,36,.14), transparent)',
-        }}
-      />
-
+    <div className="weave-bg min-h-dvh overflow-x-hidden text-ink">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-        <div className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-600 text-sm text-white">
+        <div className="flex items-center gap-2.5 font-display font-semibold tracking-tight">
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-contrast shadow-[0_0_0_1px_hsl(var(--gold)/0.4)]">
             FG
           </span>
           Finance Guru
@@ -62,44 +52,50 @@ export function Landing() {
 
       {/* Hero */}
       <section className="mx-auto grid max-w-5xl items-center gap-8 px-5 pb-6 pt-6 md:grid-cols-2 md:pt-12">
-        <div className="animate-fade-up">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-xs font-medium text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+        <div>
+          <span className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs font-medium text-ink-soft backdrop-blur">
+            <span className="animate-dot h-1.5 w-1.5 rounded-full bg-positive" />
             100% private · runs in your browser
           </span>
-          <h1 className="mt-4 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
+          <h1 className="animate-weave-in mt-4 font-display text-[2.6rem] font-semibold leading-[1.05] tracking-tight sm:text-[3.25rem]">
             Know exactly what your{' '}
-            <span className="bg-gradient-to-r from-indigo-500 to-amber-400 bg-clip-text text-transparent">
-              salary becomes
-            </span>
-            .
+            <span className="text-gold-gradient italic">salary becomes</span>.
           </h1>
-          <p className="mt-4 max-w-md text-base text-slate-600 dark:text-slate-300">
+          <p
+            className="animate-fade-up mt-5 max-w-md text-base leading-relaxed text-ink-soft"
+            style={{ animationDelay: '120ms' }}
+          >
             A fast, private money manager for Malaysia. Turn your gross pay into net pay after
             statutory deductions, then budget savings, an emergency fund, goals and a live daily
             spending allowance.
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div
+            className="animate-fade-up mt-7 flex flex-wrap items-center gap-3"
+            style={{ animationDelay: '220ms' }}
+          >
             <button
               onClick={startGuest}
-              className="animate-pulse-ring rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-indigo-500"
+              className="animate-pulse-ring rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-contrast transition hover:-translate-y-0.5 hover:brightness-110"
             >
               Try it now — no signup
             </button>
             <button
               onClick={goToAuth}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="rounded-xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-gold/50 hover:bg-surface-2"
             >
               {initialized ? 'Unlock my saved data' : 'Save on this device'}
             </button>
           </div>
-          <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+          <p
+            className="animate-fade-up mt-3 text-xs text-ink-faint"
+            style={{ animationDelay: '320ms' }}
+          >
             “Try it now” saves nothing — close the tab and it’s gone.
           </p>
         </div>
 
-        <div className="relative h-72 sm:h-80 md:h-96">
+        <div className="animate-fade-up relative h-72 sm:h-80 md:h-96" style={{ animationDelay: '160ms' }}>
           <Suspense fallback={<HeroFallback />}>
             <Hero3D dark={resolved === 'dark'} />
           </Suspense>
@@ -108,21 +104,22 @@ export function Landing() {
 
       {/* Privacy callout */}
       <section className="mx-auto max-w-5xl px-5 py-8">
-        <div className="overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50/70 p-6 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+        <div className="silk-panel kain-edge overflow-hidden rounded-2xl p-6">
           <div className="flex items-start gap-4">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-500/15 text-2xl">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-positive/30 bg-positive/12 text-2xl">
               🔒
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-emerald-900 dark:text-emerald-200">
-                No data is stored.
-              </h2>
-              <p className="mt-1 text-sm leading-relaxed text-emerald-800/90 dark:text-emerald-300/90">
-                There are <strong>no servers, no accounts, and no tracking</strong>. Everything runs
-                entirely inside your browser. In “Try it now” mode <strong>nothing is saved at
-                all</strong> — refresh and it’s gone. You can optionally choose “Save on this device,”
-                and even then your data is <strong>encrypted with your passphrase and never leaves
-                your device</strong>. We literally cannot see it.
+              <h2 className="font-display text-lg font-semibold text-positive">No data is stored.</h2>
+              <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+                There are <strong className="text-ink">no servers, no accounts, and no tracking</strong>.
+                Everything runs entirely inside your browser. In “Try it now” mode{' '}
+                <strong className="text-ink">nothing is saved at all</strong> — refresh and it’s gone.
+                You can optionally choose “Save on this device,” and even then your data is{' '}
+                <strong className="text-ink">
+                  encrypted with your passphrase and never leaves your device
+                </strong>
+                . We literally cannot see it.
               </p>
             </div>
           </div>
@@ -135,14 +132,16 @@ export function Landing() {
           {FEATURES.map((f, i) => (
             <div
               key={f.title}
-              className="group animate-fade-up rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900"
-              style={{ animationDelay: `${i * 90}ms` }}
+              className="group animate-fade-up silk-panel rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:border-gold/40"
+              style={{ animationDelay: `${i * 90 + 200}ms` }}
             >
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-500/10 text-lg text-indigo-600 transition group-hover:scale-110 dark:text-indigo-300">
+              <div className="grid h-11 w-11 place-items-center rounded-xl border border-gold/25 bg-gold/10 font-display text-xl text-gold transition group-hover:scale-110 group-hover:bg-gold/15">
                 {f.icon}
               </div>
-              <h3 className="mt-3 font-semibold">{f.title}</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{f.body}</p>
+              <h3 className="mt-3 font-display text-base font-semibold tracking-tight text-ink">
+                {f.title}
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-ink-soft">{f.body}</p>
             </div>
           ))}
         </div>
@@ -150,19 +149,29 @@ export function Landing() {
 
       {/* Bottom CTA */}
       <section className="mx-auto max-w-5xl px-5 pb-16">
-        <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 p-8 text-center text-white">
-          <h2 className="text-2xl font-bold">Ready in seconds.</h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-indigo-100">
-            No account, no install. Enter your pay and start budgeting.
-          </p>
-          <button
-            onClick={startGuest}
-            className="mt-5 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-indigo-700 transition hover:-translate-y-0.5"
-          >
-            Open Finance Guru
-          </button>
+        <div className="kain-edge relative overflow-hidden rounded-2xl bg-primary p-8 text-center text-primary-contrast">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-50"
+            style={{
+              background:
+                'radial-gradient(50% 80% at 50% 0%, hsl(var(--gold) / 0.35), transparent 70%)',
+            }}
+          />
+          <div className="relative">
+            <h2 className="font-display text-2xl font-semibold">Ready in seconds.</h2>
+            <p className="mx-auto mt-1 max-w-md text-sm opacity-90">
+              No account, no install. Enter your pay and start budgeting.
+            </p>
+            <button
+              onClick={startGuest}
+              className="mt-5 rounded-xl bg-gold px-6 py-3 text-sm font-bold text-[hsl(197_40%_8%)] shadow-sm transition hover:-translate-y-0.5 hover:brightness-105"
+            >
+              Open Finance Guru
+            </button>
+          </div>
         </div>
-        <p className="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
+        <p className="mt-6 text-center text-xs text-ink-faint">
           Estimates only — not financial or tax advice. Confirm against your payslip and LHDN / KWSP /
           PERKESO.
         </p>

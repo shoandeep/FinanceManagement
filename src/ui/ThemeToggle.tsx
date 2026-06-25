@@ -18,7 +18,8 @@ export function ThemeToggle({ size = 36 }: { size?: number }) {
 
   // Cutout position: overlapping the body -> crescent; far off -> full disc.
   const cutout = showMoon ? { x: 5, y: -3.5 } : { x: 13, y: -12 };
-  const bodyColor = showMoon ? '#cbd5e1' : '#fbbf24'; // slate-300 moon / amber-400 sun
+  // Pewter-silk moon / molten-gold sun — on brand with the songket palette.
+  const bodyColor = showMoon ? '#9fb4ad' : '#e8b23a';
   const transition = 'transform 500ms cubic-bezier(.34,1.56,.64,1), opacity 350ms ease';
 
   const rays = Array.from({ length: 8 }, (_, i) => {
@@ -32,7 +33,7 @@ export function ThemeToggle({ size = 36 }: { size?: number }) {
         y1={12 + Math.sin(a) * r1}
         x2={12 + Math.cos(a) * r2}
         y2={12 + Math.sin(a) * r2}
-        stroke="#fbbf24"
+        stroke="#e8b23a"
         strokeWidth={1.6}
         strokeLinecap="round"
       />
@@ -48,7 +49,7 @@ export function ThemeToggle({ size = 36 }: { size?: number }) {
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      className="grid place-items-center rounded-full text-slate-500 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:hover:bg-slate-800"
+      className="grid place-items-center rounded-full text-ink-faint transition hover:bg-gold/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       style={{ width: size, height: size }}
     >
       <svg width={size * 0.62} height={size * 0.62} viewBox="0 0 24 24" aria-hidden="true">

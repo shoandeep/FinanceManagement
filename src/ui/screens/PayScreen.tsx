@@ -24,15 +24,15 @@ function OverrideRow({
   return (
     <div className="grid grid-cols-[1fr_auto] items-center gap-3 py-2">
       <div>
-        <label htmlFor={id} className="text-sm font-medium text-slate-700 dark:text-slate-200">
+        <label htmlFor={id} className="text-sm font-medium text-ink-soft">
           {label}
         </label>
-        <p className="text-xs text-slate-400 dark:text-slate-500">
+        <p className="text-xs text-ink-faint">
           Estimate {formatSen(line.estimateSen)}
           {line.overridden && (
             <button
               type="button"
-              className="ml-2 text-indigo-600 hover:underline dark:text-indigo-400"
+              className="ml-2 font-semibold text-gold hover:underline"
               onClick={() =>
                 update((d) => {
                   delete d.pay.overrides[field];
@@ -57,8 +57,8 @@ function OverrideRow({
           />
         </div>
         <span
-          className={`w-16 shrink-0 text-center text-[10px] font-medium uppercase tracking-wide ${
-            line.overridden ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'
+          className={`w-16 shrink-0 text-center text-[10px] font-semibold uppercase tracking-wide ${
+            line.overridden ? 'text-gold' : 'text-ink-faint'
           }`}
         >
           {line.overridden ? 'Override' : 'Auto'}
@@ -126,25 +126,25 @@ export function PayScreen() {
       </Card>
 
       <Card title="Deductions & net pay">
-        <p className="mb-1 text-xs text-slate-400 dark:text-slate-500">
+        <p className="mb-1 text-xs text-ink-faint">
           Each line is an estimate you can override with the actual figure from your payslip.
         </p>
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="divide-y divide-line">
           <OverrideRow label="EPF (employee)" line={f.pay.epf} field="epfEmployeeSen" />
           <OverrideRow label="SOCSO (employee)" line={f.pay.socso} field="socsoEmployeeSen" />
           <OverrideRow label="EIS (employee)" line={f.pay.eis} field="eisEmployeeSen" />
           <OverrideRow label="PCB (income tax)" line={f.pay.pcb} field="pcbMonthlySen" />
         </div>
 
-        <div className="mt-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+        <div className="mt-3 rounded-xl border border-gold/20 bg-gold/[0.07] p-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Net pay</span>
-            <span className="text-lg font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+            <span className="font-display text-sm font-semibold text-ink">Net pay</span>
+            <span className="text-xl font-bold tabular-nums text-positive">
               <Money sen={f.pay.netSen} />
             </span>
           </div>
           <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-3">
-            <label className="text-xs text-slate-500 dark:text-slate-400">
+            <label className="text-xs text-ink-soft">
               Override net pay with payslip figure
             </label>
             <div className="flex items-center gap-2">
@@ -163,7 +163,7 @@ export function PayScreen() {
                   reset
                 </Button>
               ) : (
-                <span className="w-16 text-center text-[10px] uppercase tracking-wide text-slate-400">
+                <span className="w-16 text-center text-[10px] uppercase tracking-wide text-ink-faint">
                   Auto
                 </span>
               )}
@@ -171,7 +171,7 @@ export function PayScreen() {
           </div>
         </div>
 
-        <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+        <p className="mt-3 text-xs text-ink-faint">
           Employer contributions (info only): EPF {formatSen(f.pay.epf.employerSen)} · SOCSO{' '}
           {formatSen(f.pay.socso.employerSen)} · EIS {formatSen(f.pay.eis.employerSen)}
         </p>

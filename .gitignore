@@ -9,6 +9,9 @@ dist-ssr/
 # local tooling
 .claude/settings.local.json
 
+# local restore point (pre-redesign snapshot)
+backup/
+
 # test / coverage
 coverage/
 playwright-report/

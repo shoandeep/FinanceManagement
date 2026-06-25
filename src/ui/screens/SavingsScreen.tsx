@@ -15,7 +15,7 @@ export function SavingsScreen() {
       <Card title="Emergency fund">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm">
-            <span className="text-slate-600 dark:text-slate-300">Months to cover</span>
+            <span className="text-ink-soft">Months to cover</span>
             <input
               type="number"
               min={0}
@@ -24,11 +24,11 @@ export function SavingsScreen() {
               onChange={(e) =>
                 update((d) => void (d.emergencyFund.months = Math.max(0, Number(e.target.value) || 0)))
               }
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-950"
+              className="mt-1 w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm tabular-nums text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
             />
           </label>
           <label className="text-sm">
-            <span className="text-slate-600 dark:text-slate-300">Current balance</span>
+            <span className="text-ink-soft">Current balance</span>
             <div className="mt-1">
               <MoneyInput
                 valueSen={data.emergencyFund.currentSen}
@@ -58,7 +58,7 @@ export function SavingsScreen() {
           />
         </div>
         {!f.emergency.funded && f.emergency.suggestedContributionSen > 0 && (
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-xs text-ink-soft">
             Suggested: route {formatSen(f.emergency.suggestedContributionSen)} of this month's savings
             here first.
           </p>
@@ -80,13 +80,13 @@ export function SavingsScreen() {
         }
       >
         {data.goals.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">No goals yet.</p>
+          <p className="text-sm text-ink-faint">No goals yet.</p>
         ) : (
           <ul className="space-y-4">
             {data.goals.map((g, i) => {
               const s = f.goals[i];
               return (
-                <li key={g.id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <li key={g.id} className="rounded-xl border border-line bg-surface-2/40 p-3">
                   <div className="flex items-center gap-2">
                     <TextInput
                       aria-label="Goal name"
@@ -111,7 +111,7 @@ export function SavingsScreen() {
                     </Button>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2">
-                    <label className="text-xs text-slate-500 dark:text-slate-400">
+                    <label className="text-xs text-ink-soft">
                       Saved
                       <div className="mt-1">
                         <MoneyInput
@@ -125,7 +125,7 @@ export function SavingsScreen() {
                         />
                       </div>
                     </label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400">
+                    <label className="text-xs text-ink-soft">
                       Target
                       <div className="mt-1">
                         <MoneyInput
@@ -140,7 +140,7 @@ export function SavingsScreen() {
                       </div>
                     </label>
                   </div>
-                  <label className="mt-2 block text-xs text-slate-500 dark:text-slate-400">
+                  <label className="mt-2 block text-xs text-ink-soft">
                     Deadline (optional)
                     <input
                       type="date"
@@ -153,15 +153,15 @@ export function SavingsScreen() {
                           else delete item.deadline;
                         })
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-950"
+                      className="mt-1 w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
                     />
                   </label>
                   <div className="mt-2">
                     <ProgressBar value={s.pctComplete} label={`${g.name} progress`} />
-                    <p className="mt-1 flex justify-between text-xs text-slate-400 dark:text-slate-500">
+                    <p className="mt-1 flex justify-between text-xs text-ink-faint">
                       <span>{s.pctComplete.toFixed(0)}% · {formatSen(s.remainingSen)} to go</span>
                       {s.suggestedMonthlySen !== null && (
-                        <span className={s.overdue ? 'text-red-500' : ''}>
+                        <span className={s.overdue ? 'text-negative' : ''}>
                           {s.overdue ? 'Overdue · ' : ''}
                           {formatSen(s.suggestedMonthlySen)}/mo
                         </span>
@@ -188,7 +188,7 @@ export function SavingsScreen() {
         }
       >
         {data.investments.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">
+          <p className="text-sm text-ink-faint">
             Track pots like ASB, EPF i-Invest, unit trusts, equities. Tracking only — not advice.
           </p>
         ) : (
@@ -229,9 +229,9 @@ export function SavingsScreen() {
             ))}
           </ul>
         )}
-        <div className="mt-3 flex justify-between border-t border-slate-100 pt-3 text-sm dark:border-slate-800">
-          <span className="font-medium text-slate-600 dark:text-slate-300">Total invested</span>
-          <span className="font-semibold tabular-nums">
+        <div className="mt-3 flex justify-between border-t border-line pt-3 text-sm">
+          <span className="font-medium text-ink-soft">Total invested</span>
+          <span className="font-bold tabular-nums text-ink">
             <Money sen={f.investmentsTotalSen} />
           </span>
         </div>

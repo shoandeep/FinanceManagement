@@ -1,20 +1,134 @@
 @import 'tailwindcss';
 
-/* Class-based dark mode: `dark:` utilities apply when an ancestor has `.dark`.
-   ThemeProvider toggles `.dark` on <html> and respects the system preference. */
+/* ============================================================================
+   FINANCE GURU — "SONGKET" design system
+   ----------------------------------------------------------------------------
+   Concept: Malaysian songket — handwoven silk brocade shot through with gold
+   thread (benang emas). The dark theme is deep silk at night (warm near-black
+   garnet/charcoal grounds, gold thread catching the light). The light theme is
+   warm rice-paper / kertas with a deep jungle-teal ink and the same molten gold
+   accent. Gold = prosperity & the ringgit. Jewel tones replace the old
+   indigo-on-white cliché entirely.
+
+   Typography:
+     --font-display : Fraunces Variable  (serif, opsz/SOFT/WONK)  -> headings
+     --font-sans    : Hanken Grotesk Variable                      -> body / UI
+     --font-mono    : Space Mono                                   -> money / nums
+   ========================================================================== */
+
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-  color-scheme: light dark;
+@theme {
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
+  --font-sans: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, 'SFMono-Regular', monospace;
 }
 
-/* Smooth, accessible focus + reduced-motion friendliness. */
+/* ----------------------------------------------------------- color tokens */
+:root {
+  color-scheme: light;
+
+  /* LIGHT — warm rice-paper + jungle teal ink + molten gold thread */
+  --bg: 41 38% 95%;            /* kertas / parchment */
+  --bg-2: 40 44% 91%;          /* slightly deeper paper for layering */
+  --surface: 42 50% 98%;       /* card */
+  --surface-2: 40 36% 93%;     /* sunken / inset */
+  --ink: 183 38% 11%;          /* deep teal-black text */
+  --ink-soft: 184 16% 30%;     /* secondary text */
+  --ink-faint: 185 12% 46%;    /* tertiary / hints */
+  --line: 38 26% 84%;          /* hairlines */
+  --line-strong: 38 24% 76%;
+
+  --primary: 181 64% 22%;      /* hutan — deep jungle teal */
+  --primary-soft: 180 46% 34%;
+  --primary-contrast: 45 70% 96%;
+
+  --gold: 38 78% 46%;          /* benang emas — molten gold thread */
+  --gold-bright: 41 92% 56%;
+  --gold-soft: 40 70% 88%;
+
+  --garnet: 348 64% 42%;       /* delima — accent / negatives in song palette */
+  --emerald-acc: 158 58% 33%;  /* positive */
+
+  --positive: 158 64% 30%;
+  --negative: 350 70% 44%;
+  --warning: 32 82% 42%;
+
+  --ring: 38 78% 46%;          /* gold focus ring */
+
+  /* atmospheric thread glints used by backgrounds */
+  --glow-a: 38 90% 55%;        /* gold */
+  --glow-b: 181 64% 28%;       /* teal */
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* DARK — deep songket silk at night, gold thread catching light */
+  --bg: 200 30% 6%;            /* warm midnight teal-black */
+  --bg-2: 198 32% 8%;
+  --surface: 197 28% 11%;      /* silk panel */
+  --surface-2: 197 26% 14%;
+  --ink: 40 44% 92%;           /* warm ivory text */
+  --ink-soft: 38 20% 74%;
+  --ink-faint: 195 12% 56%;
+  --line: 197 22% 20%;
+  --line-strong: 196 20% 27%;
+
+  --primary: 168 64% 46%;      /* luminous teal-jade */
+  --primary-soft: 170 40% 58%;
+  --primary-contrast: 197 40% 7%;
+
+  --gold: 41 88% 60%;          /* bright gold thread */
+  --gold-bright: 44 96% 66%;
+  --gold-soft: 40 36% 22%;
+
+  --garnet: 352 72% 60%;
+  --emerald-acc: 158 60% 50%;
+
+  --positive: 158 64% 52%;
+  --negative: 352 80% 66%;
+  --warning: 38 90% 60%;
+
+  --ring: 41 88% 60%;
+
+  --glow-a: 41 90% 56%;
+  --glow-b: 168 64% 40%;
+}
+
+/* Map tokens into Tailwind's color space so utilities like text-ink, bg-surface,
+   border-line, text-gold etc. all resolve from the variables above. */
+@theme inline {
+  --color-bg: hsl(var(--bg));
+  --color-bg-2: hsl(var(--bg-2));
+  --color-surface: hsl(var(--surface));
+  --color-surface-2: hsl(var(--surface-2));
+  --color-ink: hsl(var(--ink));
+  --color-ink-soft: hsl(var(--ink-soft));
+  --color-ink-faint: hsl(var(--ink-faint));
+  --color-line: hsl(var(--line));
+  --color-line-strong: hsl(var(--line-strong));
+  --color-primary: hsl(var(--primary));
+  --color-primary-soft: hsl(var(--primary-soft));
+  --color-primary-contrast: hsl(var(--primary-contrast));
+  --color-gold: hsl(var(--gold));
+  --color-gold-bright: hsl(var(--gold-bright));
+  --color-gold-soft: hsl(var(--gold-soft));
+  --color-garnet: hsl(var(--garnet));
+  --color-positive: hsl(var(--positive));
+  --color-negative: hsl(var(--negative));
+  --color-warning: hsl(var(--warning));
+  --color-ring: hsl(var(--ring));
+}
+
+/* --------------------------------------------------------------- reset/base */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
@@ -26,13 +140,151 @@ body,
 
 body {
   margin: 0;
+  font-family: var(--font-sans);
+  color: hsl(var(--ink));
+  background-color: hsl(var(--bg));
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Landing-page flourishes. */
+/* Headings reach for Fraunces with optical sizing + a touch of softness/wonk so
+   they feel hand-cut rather than geometric. */
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 60, 'SOFT' 30, 'WONK' 1;
+  letter-spacing: -0.01em;
+}
+
+/* Tabular money/numbers ride the mono face for ledger character. */
+.tabular-nums,
+.font-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' 1;
+}
+
+::selection {
+  background: hsl(var(--gold) / 0.28);
+  color: hsl(var(--ink));
+}
+
+/* Pretty, on-brand scrollbar (webkit). */
+*::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+*::-webkit-scrollbar-thumb {
+  background: hsl(var(--gold) / 0.35);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--gold) / 0.55);
+  background-clip: padding-box;
+}
+
+/* ============================================================ BACKGROUNDS
+
+   The "songket weave": a layered atmospheric ground built from radial gold/teal
+   glints over a faint woven thread grid. Used behind landing + app shells. */
+.weave-bg {
+  position: relative;
+  background-color: hsl(var(--bg));
+}
+.weave-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 46% at 82% -4%, hsl(var(--glow-a) / 0.16), transparent 70%),
+    radial-gradient(52% 44% at 2% 102%, hsl(var(--glow-b) / 0.18), transparent 70%),
+    radial-gradient(40% 38% at 100% 100%, hsl(var(--glow-a) / 0.08), transparent 70%);
+}
+/* Faint diagonal gold "thread" lattice — the woven texture, very subtle. */
+.weave-bg::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      hsl(var(--gold) / 0.05) 0 1px,
+      transparent 1px 22px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      hsl(var(--primary) / 0.045) 0 1px,
+      transparent 1px 22px
+    );
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 92%);
+}
+.dark .weave-bg::after {
+  opacity: 0.7;
+}
+
+/* A thin woven top-border motif for cards / the hero — the "tepi kain" edge. */
+.kain-edge {
+  position: relative;
+}
+.kain-edge::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  border-radius: 9999px 9999px 0 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--gold) / 0.7) 20%,
+    hsl(var(--gold-bright)) 50%,
+    hsl(var(--gold) / 0.7) 80%,
+    transparent
+  );
+  opacity: 0.55;
+}
+
+/* Gold gradient text for hero emphasis ("salary becomes"). */
+.text-gold-gradient {
+  background: linear-gradient(
+    100deg,
+    hsl(var(--gold)) 0%,
+    hsl(var(--gold-bright)) 45%,
+    hsl(var(--primary-soft)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Frosted silk panel — the signature card surface. */
+.silk-panel {
+  background:
+    linear-gradient(180deg, hsl(var(--surface)) 0%, hsl(var(--surface-2)) 100%);
+  border: 1px solid hsl(var(--line));
+  box-shadow:
+    0 1px 0 0 hsl(var(--gold) / 0.06) inset,
+    0 18px 40px -28px hsl(var(--primary) / 0.35);
+}
+.dark .silk-panel {
+  box-shadow:
+    0 1px 0 0 hsl(var(--gold) / 0.1) inset,
+    0 24px 50px -30px rgb(0 0 0 / 0.7);
+}
+
+/* =================================================================== MOTION */
+
+/* Staggered page-load reveal. */
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -40,7 +292,24 @@ body {
   }
 }
 .animate-fade-up {
-  animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Headline reveal with a slight blur-in for the "woven into focus" feel. */
+@keyframes weave-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.animate-weave-in {
+  animation: weave-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes float-y {
@@ -53,20 +322,58 @@ body {
   }
 }
 .animate-float {
-  animation: float-y 5s ease-in-out infinite;
+  animation: float-y 6s ease-in-out infinite;
 }
 
+/* Gold pulse ring on the primary CTA. */
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.45);
+    box-shadow: 0 0 0 0 hsl(var(--gold) / 0.5);
   }
   70% {
-    box-shadow: 0 0 0 12px rgba(99, 102, 241, 0);
+    box-shadow: 0 0 0 14px hsl(var(--gold) / 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+    box-shadow: 0 0 0 0 hsl(var(--gold) / 0);
   }
 }
 .animate-pulse-ring {
-  animation: pulse-ring 2.2s ease-out infinite;
+  animation: pulse-ring 2.4s ease-out infinite;
+}
+
+/* A slow travelling sheen, like light moving across silk thread. */
+@keyframes thread-sheen {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 250% 0;
+  }
+}
+.animate-sheen {
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    hsl(var(--gold-bright) / 0.55) 50%,
+    transparent 70%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: thread-sheen 4.5s ease-in-out infinite;
+}
+
+/* Live status dot (privacy badge). */
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+.animate-dot {
+  animation: dot-pulse 2s ease-in-out infinite;
 }

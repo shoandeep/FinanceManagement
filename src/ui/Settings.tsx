@@ -45,22 +45,22 @@ export function Settings({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/60 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[hsl(197_40%_4%/0.7)] p-4 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Settings"
     >
       <div
-        className="my-8 w-full max-w-md space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900"
+        className="silk-panel kain-edge animate-fade-up my-8 w-full max-w-md space-y-6 rounded-2xl p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Settings</h2>
+          <h2 className="font-display text-xl font-semibold tracking-tight">Settings</h2>
           <button
             onClick={onClose}
             aria-label="Close settings"
-            className="rounded-lg px-2 py-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+            className="rounded-lg px-2 py-1 text-ink-faint transition hover:bg-gold/10 hover:text-gold"
           >
             ✕
           </button>
@@ -68,8 +68,8 @@ export function Settings({ onClose }: { onClose: () => void }) {
 
         {/* Export */}
         <section className="space-y-2">
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Export reports</h3>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
+          <h3 className="font-display text-sm font-semibold text-ink">Export reports</h3>
+          <p className="text-xs text-ink-faint">
             Downloads a CSV (opens in Excel / Google Sheets). Built on your device — nothing is sent
             anywhere.
           </p>
@@ -83,11 +83,11 @@ export function Settings({ onClose }: { onClose: () => void }) {
         {isAccount ? (
           <>
             {/* Change passphrase */}
-            <section className="space-y-2 border-t border-slate-100 pt-5 dark:border-slate-800">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            <section className="space-y-2 border-t border-line pt-5">
+              <h3 className="font-display text-sm font-semibold text-ink">
                 Change passphrase
               </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500">
+              <p className="text-xs text-ink-faint">
                 Re-encrypts your data with a new passphrase. There is no recovery without it — if you
                 forget it, the only option is to shred and start over.
               </p>
@@ -114,9 +114,7 @@ export function Settings({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setConfirmPass(e.target.value)}
               />
               {pwMsg && (
-                <p
-                  className={`text-xs ${pwMsg.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
-                >
+                <p className={`text-xs ${pwMsg.ok ? 'text-positive' : 'text-negative'}`}>
                   {pwMsg.text}
                 </p>
               )}
@@ -126,9 +124,9 @@ export function Settings({ onClose }: { onClose: () => void }) {
             </section>
 
             {/* Danger zone */}
-            <section className="space-y-2 rounded-xl border border-red-200 bg-red-50/50 p-4 dark:border-red-900/50 dark:bg-red-950/20">
-              <h3 className="text-sm font-semibold text-red-700 dark:text-red-300">Danger zone</h3>
-              <p className="text-xs text-red-700/80 dark:text-red-300/80">
+            <section className="space-y-2 rounded-xl border border-negative/30 bg-negative/8 p-4">
+              <h3 className="font-display text-sm font-semibold text-negative">Danger zone</h3>
+              <p className="text-xs text-negative/85">
                 Permanently delete <strong>all</strong> stored data on this device. This cannot be
                 undone.
               </p>
@@ -138,7 +136,7 @@ export function Settings({ onClose }: { onClose: () => void }) {
                 </Button>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-xs text-red-700 dark:text-red-300">
+                  <p className="text-xs text-negative">
                     Type <strong>DELETE</strong> to confirm:
                   </p>
                   <TextInput
@@ -155,7 +153,7 @@ export function Settings({ onClose }: { onClose: () => void }) {
                       variant="danger"
                       disabled={shredText !== 'DELETE'}
                       onClick={() => void shred()}
-                      className="flex-1 border border-red-300 dark:border-red-800"
+                      className="flex-1 border border-negative/40"
                     >
                       Permanently delete
                     </Button>
@@ -165,7 +163,7 @@ export function Settings({ onClose }: { onClose: () => void }) {
             </section>
           </>
         ) : (
-          <p className="border-t border-slate-100 pt-5 text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
+          <p className="border-t border-line pt-5 text-xs text-ink-faint">
             You're in guest mode. Choose “Save on this device” to set a passphrase, then you can change
             it or shred your data here.
           </p>

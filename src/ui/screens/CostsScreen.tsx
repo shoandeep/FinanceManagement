@@ -18,9 +18,9 @@ function AllocPctInput({
   onChange: (n: number) => void;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+    <div className="rounded-xl border border-line bg-surface-2/50 p-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</span>
+        <span className="text-sm font-medium text-ink">{label}</span>
         <div className="flex items-center gap-1">
           <input
             type="number"
@@ -29,12 +29,12 @@ function AllocPctInput({
             value={value}
             onChange={(e) => onChange(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
             aria-label={`${label} percent`}
-            className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-right text-sm tabular-nums outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-950"
+            className="w-16 rounded-lg border border-line-strong bg-surface px-2 py-1 text-right text-sm tabular-nums text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
           />
-          <span className="text-sm text-slate-400">%</span>
+          <span className="text-sm text-ink-faint">%</span>
         </div>
       </div>
-      <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+      <p className="mt-1 text-xs text-ink-faint">
         = <Money sen={amountSen} /> / month
       </p>
     </div>
@@ -65,7 +65,7 @@ export function CostsScreen() {
         }
       >
         {data.fixedCosts.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">
+          <p className="text-sm text-ink-faint">
             No fixed costs yet — add rent, utilities, phone, internet, subscriptions, PTPTN, loans…
           </p>
         ) : (
@@ -108,9 +108,9 @@ export function CostsScreen() {
             ))}
           </ul>
         )}
-        <div className="mt-3 flex justify-between border-t border-slate-100 pt-3 text-sm dark:border-slate-800">
-          <span className="font-medium text-slate-600 dark:text-slate-300">Total fixed</span>
-          <span className="font-semibold tabular-nums">
+        <div className="mt-3 flex justify-between border-t border-line pt-3 text-sm">
+          <span className="font-medium text-ink-soft">Total fixed</span>
+          <span className="font-bold tabular-nums text-ink">
             <Money sen={f.totalFixedSen} />
           </span>
         </div>
@@ -118,16 +118,16 @@ export function CostsScreen() {
 
       <Card title="Allocation">
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs text-slate-500 dark:text-slate-400">Split your</span>
-          <div className="inline-flex rounded-lg border border-slate-200 p-0.5 text-xs dark:border-slate-700">
+          <span className="text-xs text-ink-soft">Split your</span>
+          <div className="inline-flex rounded-lg border border-line p-0.5 text-xs">
             {(['disposable', 'net'] as AllocationBase[]).map((base) => (
               <button
                 key={base}
                 onClick={() => update((d) => void (d.allocation.base = base))}
-                className={`rounded-md px-2.5 py-1 font-medium capitalize transition ${
+                className={`rounded-md px-2.5 py-1 font-semibold capitalize transition ${
                   a.base === base
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                    ? 'bg-primary text-primary-contrast'
+                    : 'text-ink-faint hover:text-ink'
                 }`}
               >
                 {base === 'disposable' ? 'After fixed' : 'Net pay'}
@@ -136,7 +136,7 @@ export function CostsScreen() {
           </div>
         </div>
 
-        <p className="mb-3 text-xs text-slate-400 dark:text-slate-500">
+        <p className="mb-3 text-xs text-ink-faint">
           Base: <Money sen={f.allocation.baseSen} /> / month
         </p>
 
@@ -162,7 +162,7 @@ export function CostsScreen() {
         </div>
 
         <p
-          className={`mt-3 text-xs ${pctSum === 100 ? 'text-slate-400 dark:text-slate-500' : 'text-amber-600 dark:text-amber-400'}`}
+          className={`mt-3 text-xs ${pctSum === 100 ? 'text-ink-faint' : 'text-warning'}`}
         >
           {pctSum === 100
             ? 'Percentages total 100%.'

@@ -23,11 +23,15 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 ${className}`}
+      className={`silk-panel kain-edge rounded-2xl p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-gold/40 ${className}`}
     >
       {(title || action) && (
         <header className="mb-3 flex items-center justify-between gap-2">
-          {title && <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{title}</h2>}
+          {title && (
+            <h2 className="font-display text-[0.95rem] font-medium tracking-tight text-ink">
+              {title}
+            </h2>
+          )}
           {action}
         </header>
       )}
@@ -39,10 +43,10 @@ export function Card({
 /* ----------------------------------------------------------------- Stat */
 type Tone = 'default' | 'positive' | 'negative' | 'muted';
 const toneText: Record<Tone, string> = {
-  default: 'text-slate-900 dark:text-slate-50',
-  positive: 'text-emerald-600 dark:text-emerald-400',
-  negative: 'text-red-600 dark:text-red-400',
-  muted: 'text-slate-500 dark:text-slate-400',
+  default: 'text-ink',
+  positive: 'text-positive',
+  negative: 'text-negative',
+  muted: 'text-ink-faint',
 };
 
 export function Stat({
@@ -58,9 +62,9 @@ export function Stat({
 }) {
   return (
     <div>
-      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
-      <p className={`mt-0.5 text-lg font-semibold tabular-nums ${toneText[tone]}`}>{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{sub}</p>}
+      <p className="text-[0.7rem] font-medium uppercase tracking-[0.08em] text-ink-faint">{label}</p>
+      <p className={`mt-1 text-xl font-bold tabular-nums tracking-tight ${toneText[tone]}`}>{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-ink-faint">{sub}</p>}
     </div>
   );
 }
@@ -81,10 +85,12 @@ export function ProgressBar({
   label?: string;
 }) {
   const pct = Math.max(0, Math.min(100, value));
+  // 'indigo' is the legacy default tone name kept for the call-sites; it now
+  // renders the primary jungle-teal → gold weave.
   const bar = {
-    indigo: 'bg-indigo-500',
-    emerald: 'bg-emerald-500',
-    amber: 'bg-amber-500',
+    indigo: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--gold)))',
+    emerald: 'linear-gradient(90deg, hsl(var(--positive)), hsl(var(--primary-soft)))',
+    amber: 'linear-gradient(90deg, hsl(var(--warning)), hsl(var(--gold-bright)))',
   }[tone];
   return (
     <div
@@ -93,9 +99,12 @@ export function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+      className="h-2 w-full overflow-hidden rounded-full bg-surface-2 ring-1 ring-inset ring-line"
     >
-      <div className={`h-full rounded-full ${bar} transition-[width]`} style={{ width: `${pct}%` }} />
+      <div
+        className="h-full rounded-full transition-[width] duration-500"
+        style={{ width: `${pct}%`, background: bar }}
+      />
     </div>
   );
 }
@@ -108,16 +117,17 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
   const styles: Record<ButtonVariant, string> = {
-    primary: 'bg-indigo-600 text-white hover:bg-indigo-500',
+    primary:
+      'bg-primary text-primary-contrast shadow-sm hover:brightness-110 hover:-translate-y-px active:translate-y-0',
     secondary:
-      'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
-    ghost: 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
-    danger: 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40',
+      'border border-line-strong bg-surface text-ink hover:border-gold/50 hover:bg-surface-2',
+    ghost: 'text-ink-soft hover:bg-gold/10 hover:text-gold',
+    danger: 'text-negative hover:bg-negative/10',
   };
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:opacity-60 ${styles[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-50 ${styles[variant]} ${className}`}
     />
   );
 }
@@ -138,21 +148,21 @@ export function Field({
 }) {
   return (
     <div className="space-y-1">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-ink-soft">
         {label}
       </label>
       {children}
       {error ? (
-        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-xs text-negative">{error}</p>
       ) : (
-        hint && <p className="text-xs text-slate-400 dark:text-slate-500">{hint}</p>
+        hint && <p className="text-xs text-ink-faint">{hint}</p>
       )}
     </div>
   );
 }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
+  'w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30 placeholder:text-ink-faint';
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${inputCls} ${props.className ?? ''}`} />;
@@ -193,7 +203,7 @@ export function MoneyInput({
 
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs font-bold text-gold">
         RM
       </span>
       <input
@@ -225,7 +235,7 @@ export function MoneyInput({
         onBlur={() => {
           if (!invalid) setText(formatSen(valueSen, { symbol: false }));
         }}
-        className={`${inputCls} pl-9 text-right tabular-nums ${invalid ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`}
+        className={`${inputCls} pl-9 text-right tabular-nums ${invalid ? 'border-negative focus:border-negative focus:ring-negative/30' : ''}`}
       />
     </div>
   );
@@ -234,7 +244,7 @@ export function MoneyInput({
 /* ------------------------------------------------------------ Disclaimer */
 export function Disclaimer({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+    <p className="rounded-lg border border-gold/25 bg-gold/10 px-3 py-2 text-xs leading-relaxed text-ink-soft">
       {children}
     </p>
   );

@@ -42,24 +42,18 @@ export function AppShell() {
   };
 
   return (
-    <div className="relative min-h-dvh bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 lg:flex">
-      {/* desktop ambient gradient (mobile unaffected) */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 hidden lg:block"
-        style={{
-          background:
-            'radial-gradient(50% 40% at 100% 0%, rgba(99,102,241,.12), transparent), radial-gradient(40% 35% at 0% 100%, rgba(251,191,36,.10), transparent)',
-        }}
-      />
-
+    <div className="weave-bg relative min-h-dvh text-ink lg:flex">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-60 lg:flex-col lg:border-r lg:border-slate-200 lg:bg-white/70 lg:px-3 lg:py-5 lg:backdrop-blur dark:lg:border-slate-800 dark:lg:bg-slate-900/60">
-        <div className="flex items-center gap-2 px-2 font-semibold tracking-tight">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm text-white">FG</span>
-          Finance Guru
+      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-60 lg:flex-col lg:border-r lg:border-line lg:bg-surface/70 lg:px-3 lg:py-5 lg:backdrop-blur-xl">
+        <div className="flex items-center gap-2.5 px-2">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary font-display text-sm font-bold text-primary-contrast shadow-[0_0_0_1px_hsl(var(--gold)/0.4)]">
+            FG
+          </span>
+          <span className="font-display text-[1.05rem] font-semibold tracking-tight text-ink">
+            Finance Guru
+          </span>
         </div>
-        <nav aria-label="Sections" className="mt-6 flex flex-1 flex-col gap-1">
+        <nav aria-label="Sections" className="mt-7 flex flex-1 flex-col gap-1">
           {TABS.map((t) => {
             const active = tab === t.id;
             return (
@@ -67,13 +61,22 @@ export function AppShell() {
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 aria-current={active ? 'page' : undefined}
-                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
                   active
-                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-ink-faint hover:bg-gold/8 hover:text-ink'
                 }`}
               >
-                <span aria-hidden="true" className="text-base leading-none transition group-hover:scale-110">
+                {active && (
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold"
+                  />
+                )}
+                <span
+                  aria-hidden="true"
+                  className={`text-base leading-none transition group-hover:scale-110 ${active ? 'text-gold' : ''}`}
+                >
                   {t.icon}
                 </span>
                 {t.label}
@@ -82,25 +85,25 @@ export function AppShell() {
           })}
         </nav>
         {session === 'guest' && (
-          <div className="mb-3 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+          <div className="mb-3 rounded-xl border border-gold/25 bg-gold/10 px-3 py-2 text-xs text-ink-soft">
             Guest mode — nothing is saved.
-            <button onClick={goToAuth} className="mt-1 block font-medium underline">
+            <button onClick={goToAuth} className="mt-1 block font-semibold text-gold underline">
               Save on this device
             </button>
           </div>
         )}
-        <div className="flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-800">
+        <div className="flex items-center justify-between border-t border-line pt-3">
           <ThemeToggle size={34} />
           <button
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
-            className="grid h-[34px] w-[34px] place-items-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="grid h-[34px] w-[34px] place-items-center rounded-full text-ink-faint transition hover:bg-gold/10 hover:text-gold"
           >
             <GearIcon />
           </button>
           <button
             onClick={exit}
-            className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-ink-faint transition hover:bg-gold/10 hover:text-ink"
           >
             {session === 'account' ? 'Lock' : 'Exit'}
           </button>
@@ -110,21 +113,26 @@ export function AppShell() {
       {/* Content column */}
       <div className="w-full lg:pl-60">
         {/* Mobile header (unchanged on mobile; hidden on desktop) */}
-        <header className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85 lg:hidden">
+        <header className="sticky top-0 z-10 border-b border-line bg-bg/80 backdrop-blur-xl lg:hidden">
           <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
-            <h1 className="text-base font-semibold tracking-tight">Finance Guru</h1>
+            <h1 className="flex items-center gap-2 font-display text-[1.05rem] font-semibold tracking-tight">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary text-[0.7rem] font-bold text-primary-contrast">
+                FG
+              </span>
+              Finance Guru
+            </h1>
             <div className="flex items-center gap-1">
               <ThemeToggle size={34} />
               <button
                 onClick={() => setSettingsOpen(true)}
                 aria-label="Settings"
-                className="grid h-[34px] w-[34px] place-items-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+                className="grid h-[34px] w-[34px] place-items-center rounded-full text-ink-faint transition hover:bg-gold/10 hover:text-gold"
               >
                 <GearIcon />
               </button>
               <button
                 onClick={exit}
-                className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-ink-faint transition hover:bg-gold/10 hover:text-ink"
               >
                 {session === 'account' ? 'Lock' : 'Exit'}
               </button>
@@ -132,10 +140,10 @@ export function AppShell() {
           </div>
           {session === 'guest' && (
             <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 pb-2 text-xs">
-              <span className="text-amber-600 dark:text-amber-400">Guest mode — nothing is saved.</span>
+              <span className="text-gold">Guest mode — nothing is saved.</span>
               <button
                 onClick={goToAuth}
-                className="shrink-0 rounded-md bg-amber-500/15 px-2.5 py-1 font-medium text-amber-700 transition hover:bg-amber-500/25 dark:text-amber-300"
+                className="shrink-0 rounded-md border border-gold/30 bg-gold/15 px-2.5 py-1 font-semibold text-gold transition hover:bg-gold/25"
               >
                 Save on this device
               </button>
@@ -146,9 +154,10 @@ export function AppShell() {
         {/* Desktop page heading */}
         <div className="hidden lg:block">
           <div className={`mx-auto px-6 pt-8 ${wide ? 'max-w-5xl' : 'max-w-2xl'}`}>
-            <h2 className="text-xl font-semibold capitalize tracking-tight">
+            <h2 className="font-display text-2xl font-semibold capitalize tracking-tight text-ink">
               {TABS.find((t) => t.id === tab)!.label}
             </h2>
+            <div aria-hidden className="mt-2 h-px w-16 bg-gradient-to-r from-gold to-transparent" />
           </div>
         </div>
 
@@ -159,7 +168,7 @@ export function AppShell() {
         {/* Mobile bottom nav (unchanged on mobile; hidden on desktop) */}
         <nav
           aria-label="Sections"
-          className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 backdrop-blur-xl lg:hidden"
         >
           <ul className="mx-auto flex max-w-lg">
             {TABS.map((t) => {
@@ -169,13 +178,20 @@ export function AppShell() {
                   <button
                     onClick={() => setTab(t.id)}
                     aria-current={active ? 'page' : undefined}
-                    className={`flex w-full flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition ${
-                      active
-                        ? 'text-indigo-600 dark:text-indigo-400'
-                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    className={`relative flex w-full flex-col items-center gap-0.5 py-2.5 text-[11px] font-semibold transition ${
+                      active ? 'text-primary' : 'text-ink-faint hover:text-ink'
                     }`}
                   >
-                    <span aria-hidden="true" className="text-base leading-none">
+                    {active && (
+                      <span
+                        aria-hidden
+                        className="absolute top-0 h-0.5 w-8 rounded-full bg-gold"
+                      />
+                    )}
+                    <span
+                      aria-hidden="true"
+                      className={`text-base leading-none ${active ? 'text-gold' : ''}`}
+                    >
                       {t.icon}
                     </span>
                     {t.label}

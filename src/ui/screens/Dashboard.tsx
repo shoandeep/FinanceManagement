@@ -22,12 +22,12 @@ export function Dashboard({
       {data.pay.grossSen === 0 && (
         <Card className="break-inside-avoid lg:mb-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-slate-600 dark:text-slate-300">
+            <p className="text-sm text-ink-soft">
               Start by entering your gross monthly pay.
             </p>
             <button
               onClick={onGoToPay}
-              className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
+              className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-contrast transition hover:brightness-110"
             >
               Add pay
             </button>
@@ -42,7 +42,7 @@ export function Dashboard({
             value={<Money sen={f.pay.netSen} />}
             sub={`Gross ${formatSen(f.pay.grossSen)}`}
           />
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+          <span className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[11px] font-semibold text-gold">
             {f.pay.netOverridden ? 'From payslip' : 'Estimate'}
           </span>
         </div>
@@ -74,7 +74,7 @@ export function Dashboard({
         </div>
       </Card>
 
-      <Card title="Today's spending" className="break-inside-avoid lg:mb-4" action={<a href="#" onClick={(e) => { e.preventDefault(); onGoToSpend(); }} className="text-xs text-indigo-600 hover:underline dark:text-indigo-400">Details →</a>}>
+      <Card title="Today's spending" className="break-inside-avoid lg:mb-4" action={<a href="#" onClick={(e) => { e.preventDefault(); onGoToSpend(); }} className="text-xs font-semibold text-gold hover:underline">Details →</a>}>
         <div className="grid grid-cols-2 gap-4">
           <Stat
             label="Can spend today (avg)"
@@ -88,9 +88,9 @@ export function Dashboard({
             sub={`Spent today ${formatSen(f.spending.day.spentSen)}`}
           />
         </div>
-        <div className="mt-3 flex justify-between text-xs text-slate-400 dark:text-slate-500">
+        <div className="mt-3 flex justify-between text-xs text-ink-faint">
           <span>Month to date</span>
-          <span className={f.spending.overspent ? 'text-red-500' : ''}>
+          <span className={f.spending.overspent ? 'text-negative' : ''}>
             {formatSen(f.spending.spentMonthSen)} / {formatSen(f.spending.monthlyBudgetSen)}
           </span>
         </div>
@@ -103,8 +103,8 @@ export function Dashboard({
               return (
                 <li key={c.categoryId}>
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-600 dark:text-slate-300">{c.name}</span>
-                    <span className={`tabular-nums ${over ? 'text-red-600 dark:text-red-400' : 'text-slate-400'}`}>
+                    <span className="text-ink-soft">{c.name}</span>
+                    <span className={`tabular-nums ${over ? 'text-negative' : 'text-ink-faint'}`}>
                       {formatSen(c.month.spentSen)} / {formatSen(c.monthlyBudgetSen)}
                     </span>
                   </div>
