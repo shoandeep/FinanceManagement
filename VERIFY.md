@@ -118,8 +118,27 @@ Sources:
 
 ---
 
-## Items to finalise in Phase 2 (🔎)
-1. Extract the **EPF Third Schedule band table** (wages < RM20,000) from the official KWSP PDF; if
-   not parseable here, ship labelled flat 11% with override and mark `// UNVERIFIED-BAND`.
-2. Re-confirm SOCSO Act 4 / EIS Act 800 figures directly from the PERKESO PDFs once a PDF text layer
-   is available (current environment lacks `pdftoppm`); secondary sources + midpoint math agree.
+## Accuracy upgrade — exact tables (2026-06-25)
+
+Replaced the earlier approximations with the official tables / documented algorithm:
+
+- **SOCSO (Act 4, First Category):** the full official band table was extracted from the PERKESO PDF
+  (`pdf-parse`) and encoded **verbatim** in [`src/config/socsoTable.ts`](src/config/socsoTable.ts)
+  (64 bands, exact employee + employer sen). These statutory amounts do **not** follow a single
+  formula — e.g. the RM70–100 employee band (RM0.40, not 0.5%×midpoint=0.425) and several employer
+  figures round irregularly (RM1,100 → RM18.35, not 18.40) — so the exact lookup is the only correct
+  approach. Employee max RM29.75 / employer RM104.15 at the ceiling, as verified.
+  - **SKBBK note:** the same PDF now lists a newer **non-employment-injury (SKBBK)** employee add-on.
+    It is **excluded** here — the standard payslip SOCSO deduction and every public calculator use the
+    **Invalidity** column only (RM29.75 max). If SKBBK becomes mandatory for employees, revisit this.
+- **EIS (Act 800):** uses the same official PERKESO wage bands at 0.2% (computed on the band
+  midpoint, rounded to 5 sen). Exact at the ceiling (RM11.90) and for all realistic wages; the
+  Act 800 PDF itself is image-based and did not yield a text layer, so low sub-RM1,000 bands are
+  computed rather than table-verified (immaterial for salaried use; overridable).
+- **EPF (Third Schedule):** now implements the **banded algorithm** — RM20 bands, rate applied to the
+  band's **upper limit**, contribution **rounded up to the next ringgit** (the documented KWSP rule);
+  exact percentage above RM20,000. Exact at the verified RM5,000 → RM550 point.
+  - **Limitation:** KWSP **blocks** automated access to the Third Schedule PDF (HTTP 403 even with a
+    browser user-agent), so the full table could not be byte-validated. The algorithm follows the
+    officially documented banding + round-up rule and is a large improvement over the previous
+    flat-11% approximation. Net pay remains an estimate; every line is overridable.

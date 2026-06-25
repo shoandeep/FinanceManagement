@@ -16,6 +16,11 @@ describe('EIS employee (spec 7.1 oracle)', () => {
     expect(eisEmployeeSen(600_000, 'under60', 'foreigner')).toBe(0);
   });
 
+  it('matches band values below the ceiling', () => {
+    expect(eisEmployeeSen(175_000, 'under60', 'citizen')).toBe(350); // RM1,750 -> RM3.50
+    expect(eisEmployeeSen(500_000, 'under60', 'citizen')).toBe(990); // RM5,000 -> RM9.90
+  });
+
   it('zero gross -> zero', () => {
     expect(eisEmployeeSen(0, 'under60', 'citizen')).toBe(0);
   });

@@ -48,13 +48,14 @@ export const EPF = {
   /** Below this wage the official Third Schedule uses a BANDED table, not a flat %. */
   thirdScheduleCeilingSen: 2_000_000, // RM20,000
   /**
-   * Implementation note: the official Third Schedule band table (RM20 bands) could
-   * not be machine-extracted in this environment (no PDF text layer). The employee
-   * EPF below RM20,000 is therefore computed as a labelled FLAT 11% approximation,
-   * which is exact at band boundaries (e.g. RM5,000 -> RM550.00) and within ~RM1 of
-   * the banded value elsewhere. Net pay is an estimate and is fully overridable.
+   * Implementation note: EPF below RM20,000 uses the Third Schedule BANDED method
+   * (RM20 bands; the rate is applied to the band's upper limit and rounded UP to the
+   * next ringgit). KWSP blocks automated access to the official PDF (HTTP 403), so
+   * the full table was not byte-validated; the algorithm is exact at the verified
+   * RM5,000 -> RM550 point and follows the documented rounding rule. Net pay is an
+   * estimate and is fully overridable.
    */
-  employeeBandApproximation: 'flat-percentage' as const,
+  employeeBandMethod: 'third-schedule-banded' as const,
   meta: {
     source: 'KWSP — EPF Act 1991, Third Schedule',
     url: 'https://www.kwsp.gov.my/en/employer/responsibilities/mandatory-contribution',

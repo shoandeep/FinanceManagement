@@ -27,6 +27,20 @@ describe('EPF employee (spec 7.1 oracle)', () => {
   });
 });
 
+describe('EPF Third Schedule banded algorithm', () => {
+  it('bands in RM20 steps on the band upper limit, rounding UP to the next ringgit', () => {
+    expect(epfEmployeeSen(500_000, 'under60', 'citizen')).toBe(55_000); // RM5,000 -> RM550
+    expect(epfEmployeeSen(600_000, 'under60', 'citizen')).toBe(66_000); // RM6,000 -> RM660
+    expect(epfEmployeeSen(1_000_000, 'under60', 'citizen')).toBe(110_000); // RM10,000 -> RM1,100
+    // RM3,010 -> band upper RM3,020 -> 11% = RM332.20 -> rounded up to RM333
+    expect(epfEmployeeSen(301_000, 'under60', 'citizen')).toBe(33_300);
+  });
+
+  it('uses the exact percentage above the RM20,000 ceiling', () => {
+    expect(epfEmployeeSen(2_500_000, 'under60', 'citizen')).toBe(275_000); // RM25,000 -> RM2,750
+  });
+});
+
 describe('EPF employer (info only)', () => {
   it('13% when wage <= RM5,000, 12% above', () => {
     expect(epfEmployerSen(500_000, 'under60', 'citizen')).toBe(65_000); // 13% of 5,000

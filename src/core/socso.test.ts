@@ -13,6 +13,15 @@ describe('SOCSO employee (spec 7.1 oracle, corrected per VERIFY.md D1)', () => {
     expect(socsoEmployeeSen(600_000)).toBe(SOCSO.invariants.employeeMaxSen);
   });
 
+  it('matches exact official band values across the range', () => {
+    expect(socsoEmployeeSen(2_999)).toBe(10); // <= RM30 band -> RM0.10
+    expect(socsoEmployeeSen(10_000)).toBe(40); // RM100 -> RM0.40 (irregular band)
+    expect(socsoEmployeeSen(175_000)).toBe(875); // RM1,750 -> RM8.75
+    expect(socsoEmployeeSen(300_000)).toBe(1_475); // RM3,000 -> RM14.75
+    expect(socsoEmployeeSen(500_000)).toBe(2_475); // RM5,000 -> RM24.75
+    expect(socsoEmployeeSen(555_000)).toBe(2_775); // RM5,550 -> RM27.75
+  });
+
   it('zero / negative gross -> zero', () => {
     expect(socsoEmployeeSen(0)).toBe(0);
     expect(socsoEmployeeSen(-100)).toBe(0);
@@ -34,5 +43,11 @@ describe('SOCSO employer (info only)', () => {
     expect(socsoEmployerSen(600_000)).toBe(10_415);
     expect(socsoEmployerSen(1_000_000)).toBe(10_415);
     expect(socsoEmployerSen(600_000)).toBe(SOCSO.invariants.employerMaxSen);
+  });
+
+  it('matches exact official employer band values (irregular rounding)', () => {
+    expect(socsoEmployerSen(300_000)).toBe(5_165); // RM3,000 -> RM51.65
+    expect(socsoEmployerSen(500_000)).toBe(8_665); // RM5,000 -> RM86.65
+    expect(socsoEmployerSen(110_000)).toBe(1_835); // RM1,100 -> RM18.35 (not the naive 18.40)
   });
 });

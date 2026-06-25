@@ -124,6 +124,15 @@ export function roundToNearest5Sen(sen: Sen): Sen {
   return roundHalfUp(sen / 5) * 5;
 }
 
+/**
+ * Round a (possibly fractional) sen amount UP to the next whole ringgit.
+ * Used by the EPF Third Schedule, whose contributions including cents are
+ * rounded up to the next ringgit.
+ */
+export function roundUpToRinggit(senFloat: number): Sen {
+  return Math.ceil(senFloat / 100) * 100;
+}
+
 /** Clamp to a minimum of zero (deductions/balances never go negative). */
 export function clampMinZero(sen: Sen): Sen {
   return sen < 0 ? 0 : sen;

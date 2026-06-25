@@ -1,18 +1,17 @@
-import { SOCSO } from '../config/statutory';
-import { roundToNearest5Sen, type Sen } from '../money/money';
-import { bandMidpointSen } from './contributionBands';
+import type { Sen } from '../money/money';
+import { SOCSO_FIRST_CATEGORY, socsoBandIndex } from '../config/socsoTable';
 
 /**
- * SOCSO (Act 4, Category 1) EMPLOYEE contribution for the month, in sen.
- * Banded on the band midpoint, capped at the RM6,000 ceiling -> max RM29.75.
+ * SOCSO (Act 4, First Category) EMPLOYEE contribution for the month, in sen.
+ * Exact official band-table lookup; capped at the RM6,000 ceiling (max RM29.75).
  */
 export function socsoEmployeeSen(grossSen: Sen): Sen {
-  const mid = bandMidpointSen(grossSen, SOCSO.ceilingSen, SOCSO.bandWidthSen);
-  return roundToNearest5Sen((mid * SOCSO.category1.employeeRatePercent) / 100);
+  if (grossSen <= 0) return 0;
+  return SOCSO_FIRST_CATEGORY[socsoBandIndex(grossSen)][1];
 }
 
-/** SOCSO Category 1 EMPLOYER contribution for the month, in sen. INFO ONLY. */
+/** SOCSO First-Category EMPLOYER contribution for the month, in sen. INFO ONLY. */
 export function socsoEmployerSen(grossSen: Sen): Sen {
-  const mid = bandMidpointSen(grossSen, SOCSO.ceilingSen, SOCSO.bandWidthSen);
-  return roundToNearest5Sen((mid * SOCSO.category1.employerRatePercent) / 100);
+  if (grossSen <= 0) return 0;
+  return SOCSO_FIRST_CATEGORY[socsoBandIndex(grossSen)][2];
 }
