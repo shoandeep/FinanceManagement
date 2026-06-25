@@ -223,6 +223,11 @@ h1, h2, h3, .font-display {
 .dark .weave-bg::after {
   opacity: 0.22;
 }
+/* Home / welcome page: even fainter weave in dark mode (the 3D hero already
+   carries the gold thread there). Light mode + other screens keep their level. */
+.dark .weave-bg.home-bg::after {
+  opacity: 0.09;
+}
 
 /* A thin woven top-border motif for cards / the hero — the "tepi kain" edge. */
 .kain-edge {

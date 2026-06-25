@@ -39,7 +39,7 @@ export function Landing() {
   const { resolved } = useTheme();
 
   return (
-    <div className="weave-bg min-h-dvh overflow-x-hidden text-ink">
+    <div className="weave-bg home-bg min-h-dvh overflow-x-hidden text-ink">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
         <div className="flex items-center gap-2.5 font-display font-semibold tracking-tight">
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-contrast shadow-[0_0_0_1px_hsl(var(--gold)/0.4)]">
