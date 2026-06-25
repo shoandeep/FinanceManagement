@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useState, type MouseEvent } from 'react';
 import { useTheme } from './theme';
 
 /** A cartoon light bulb that "switches on" — drawn comic-style with burst rays. */
@@ -58,9 +58,11 @@ export function ThemeToggle({ size = 36 }: { size?: number }) {
   // Hovering previews the theme you'd switch TO.
   const showMoon = hover ? !isDark : isDark;
 
-  function handleToggle() {
+  function handleToggle(e: MouseEvent<HTMLButtonElement>) {
     const switchingToLight = resolved === 'dark';
-    toggle();
+    const rect = e.currentTarget.getBoundingClientRect();
+    // Reveal (and the bulb) originate from the centre of the button.
+    toggle({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
     if (switchingToLight) {
       const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
       if (!reduce) setBurst((n) => n + 1);
