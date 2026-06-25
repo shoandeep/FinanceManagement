@@ -5,6 +5,8 @@ for Malaysia. Takes your gross monthly pay → net pay after statutory deduction
 (EPF, SOCSO, EIS, PCB) → budgeting, savings/emergency fund, investments, and a
 dynamic daily spending allowance. Minimalist, fast, dark/light, mobile-first.
 
+**Live:** https://finance-management-one-drab.vercel.app/
+
 > **Estimates only — not financial or tax advice.** Auto-calculated net pay is an
 > estimate; your payslip is the source of truth and **every deduction is
 > overridable**. Always confirm statutory figures against LHDN / KWSP / PERKESO.
@@ -83,8 +85,11 @@ employee max RM29.75; EPF age-60+ employee 0% for citizens).
 
 ## Security
 
-See [SECURITY.md](SECURITY.md): encryption at rest, key handling, strict CSP, XSS
-hardening, fail-closed behaviour, threat model, and limitations.
+- [SECURITY.md](SECURITY.md) — model: encryption at rest, key handling, strict CSP,
+  XSS hardening, fail-closed behaviour, threat model, and limitations.
+- [SECURITY-REVIEW.md](SECURITY-REVIEW.md) — point-in-time evaluation (code review +
+  static scan + `npm audit` + runtime CSP check): no high/critical findings; HTTP
+  security headers and a stronger passphrase minimum applied.
 
 ## Build phases
 

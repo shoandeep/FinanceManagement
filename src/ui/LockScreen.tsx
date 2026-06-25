@@ -19,8 +19,8 @@ export function LockScreen() {
     e.preventDefault();
     setLocalError(null);
     if (creating) {
-      if (passphrase.length < 8) {
-        setLocalError('Use at least 8 characters.');
+      if (passphrase.length < 10) {
+        setLocalError('Use at least 10 characters — a few random words works well.');
         return;
       }
       if (passphrase !== confirm) {
