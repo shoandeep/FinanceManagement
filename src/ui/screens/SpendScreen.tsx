@@ -6,6 +6,7 @@ import { newId } from '../../model/defaults';
 import { formatSen, type Sen } from '../../money/money';
 import type { SpendPeriod } from '../../budget/spendingPlan';
 import { Card, Money, MoneyInput, TextInput, Select, Button, Stat, ProgressBar, Disclaimer } from '../components';
+import { CategoryDonut, DailyBars } from '../charts';
 
 const PERIODS: { id: SpendPeriod; label: string }[] = [
   { id: 'day', label: 'Daily' },
@@ -79,6 +80,18 @@ export function SpendScreen() {
 
   const shareSum = cats.reduce((s, c) => s + c.sharePercent, 0);
 
+  // Chart data.
+  const donutItems = plan.categories.map((c) => ({ name: c.name, value: c.month.spentSen }));
+  const dayTotals: number[] = new Array(plan.daysInMonth).fill(0);
+  data.expenses
+    .filter((e) => e.dateISO.slice(0, 7) === today.slice(0, 7))
+    .forEach((e) => {
+      const d = parseInt(e.dateISO.slice(8, 10), 10);
+      if (d >= 1 && d <= plan.daysInMonth) dayTotals[d - 1] += e.amountSen;
+    });
+  const dailyDays = dayTotals.map((v, i) => ({ day: i + 1, value: v, today: i + 1 === plan.daysElapsed }));
+  const hasSpend = plan.spentMonthSen > 0;
+
   return (
     <div className="space-y-4">
       <Card title="Spending plan">
@@ -109,6 +122,16 @@ export function SpendScreen() {
           </span>
         </div>
       </Card>
+
+      <Card title="Where your money goes">
+        <CategoryDonut items={donutItems} />
+      </Card>
+
+      {hasSpend && (
+        <Card title="Daily spending this month">
+          <DailyBars days={dailyDays} refValue={plan.day.averageSen} />
+        </Card>
+      )}
 
       <Card title={`By category · ${PERIODS.find((p) => p.id === period)!.label.toLowerCase()}`}>
         <ul className="space-y-3">
