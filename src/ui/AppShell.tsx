@@ -34,7 +34,13 @@ export function AppShell() {
   const wide = tab === 'home';
 
   const screens: Record<TabId, ReactNode> = {
-    home: <Dashboard onGoToPay={() => setTab('pay')} onGoToSpend={() => setTab('spend')} />,
+    home: (
+      <Dashboard
+        onGoToPay={() => setTab('pay')}
+        onGoToSpend={() => setTab('spend')}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+    ),
     pay: <PayScreen />,
     costs: <CostsScreen />,
     save: <SavingsScreen />,

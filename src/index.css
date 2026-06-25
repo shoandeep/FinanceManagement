@@ -214,14 +214,14 @@ h1, h2, h3, .font-display {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  opacity: 0.45;
+  opacity: 0.13;
   background-image: url('/songket.svg');
   background-size: 80px 80px;
   background-repeat: repeat;
   mask-image: radial-gradient(150% 140% at 50% 12%, #000 45%, transparent 100%);
 }
 .dark .weave-bg::after {
-  opacity: 0.7;
+  opacity: 0.22;
 }
 
 /* A thin woven top-border motif for cards / the hero — the "tepi kain" edge. */

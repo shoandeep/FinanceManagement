@@ -7,9 +7,11 @@ import { Card, Money, ProgressBar, Stat, Disclaimer } from '../components';
 export function Dashboard({
   onGoToPay,
   onGoToSpend,
+  onOpenSettings,
 }: {
   onGoToPay: () => void;
   onGoToSpend: () => void;
+  onOpenSettings: () => void;
 }) {
   const { data } = useVault();
   if (!data) return null;
@@ -118,11 +120,21 @@ export function Dashboard({
         )}
       </Card>
 
-      <div className="break-inside-avoid">
+      <div className="break-inside-avoid space-y-3">
         <Disclaimer>
           Estimates only — not financial or tax advice. Confirm against your payslip and LHDN / KWSP /
           PERKESO.
         </Disclaimer>
+        <p className="text-center text-xs text-ink-faint">
+          Want a printable report or an Excel export?{' '}
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="font-medium text-gold underline-offset-2 hover:underline"
+          >
+            Open Download &amp; Print (in Settings ⚙)
+          </button>
+        </p>
       </div>
     </div>
   );
