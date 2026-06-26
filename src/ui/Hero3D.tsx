@@ -17,117 +17,156 @@ const GOLD = 0xe8b23a;
 const GOLD_BRIGHT = 0xf6cf63;
 const TAU = Math.PI * 2;
 
-/** Draw the 50 sen obverse: gold disc, scalloped edge, hibiscus, "BANK NEGARA
- *  MALAYSIA", year, and a large "50 / SEN". */
+/** Draw the 50 sen obverse as struck metal — smooth raised rim, embossed
+ *  hibiscus, "BANK NEGARA MALAYSIA", year, and a large "50 / SEN". */
 function makeCoinTexture(): THREE.CanvasTexture {
   const S = 512;
   const cx = S / 2;
   const cy = S / 2;
-  const R = 248;
+  const R = 246;
   const cv = document.createElement('canvas');
   cv.width = cv.height = S;
   const ctx = cv.getContext('2d')!;
-  const ink = '#5a3f0d';
+  const ENGRAVE = '#8a6a22';
 
-  // metallic gold disc
-  const g = ctx.createRadialGradient(cx - 70, cy - 80, 30, cx, cy, R);
-  g.addColorStop(0, '#f8e3a0');
-  g.addColorStop(0.5, '#e4ba56');
-  g.addColorStop(0.85, '#caa038');
-  g.addColorStop(1, '#a8801f');
+  // metallic gold field, lit from the top-left
+  const g = ctx.createRadialGradient(cx - 85, cy - 95, 18, cx, cy, R + 30);
+  g.addColorStop(0, '#fbe9af');
+  g.addColorStop(0.45, '#e8c163');
+  g.addColorStop(0.8, '#cda23f');
+  g.addColorStop(1, '#a87f24');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(cx, cy, R, 0, TAU);
   ctx.fill();
 
-  // scalloped edge (3rd-series coin), then refill the inner disc
-  ctx.fillStyle = '#bd942d';
-  for (let i = 0; i < 42; i++) {
-    const a = (i / 42) * TAU;
-    ctx.beginPath();
-    ctx.arc(cx + Math.cos(a) * R, cy + Math.sin(a) * R, 7.5, 0, TAU);
-    ctx.fill();
-  }
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(cx, cy, R - 4, 0, TAU);
-  ctx.fill();
-
-  // faint horizontal guilloché background, clipped to the disc
+  // diagonal brushed sheen
   ctx.save();
   ctx.beginPath();
-  ctx.arc(cx, cy, R - 8, 0, TAU);
+  ctx.arc(cx, cy, R, 0, TAU);
   ctx.clip();
-  ctx.strokeStyle = 'rgba(120,85,15,0.09)';
-  ctx.lineWidth = 1;
-  for (let y = 24; y < S; y += 7) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(S, y);
-    ctx.stroke();
-  }
+  const sheen = ctx.createLinearGradient(0, 0, S, S);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.16)');
+  sheen.addColorStop(0.5, 'rgba(255,255,255,0)');
+  sheen.addColorStop(1, 'rgba(90,60,10,0.12)');
+  ctx.fillStyle = sheen;
+  ctx.fillRect(0, 0, S, S);
   ctx.restore();
 
-  // "BANK NEGARA MALAYSIA" along the top arc
+  // smooth raised rim (no scallops)
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.fillStyle = ink;
-  ctx.font = 'bold 27px Georgia, serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const legend = 'BANK NEGARA MALAYSIA';
-  for (let i = 0; i < legend.length; i++) {
-    const a = (i - (legend.length - 1) / 2) * 0.082;
-    ctx.save();
-    ctx.rotate(a);
-    ctx.translate(0, -(R - 36));
-    ctx.fillText(legend[i], 0, 0);
-    ctx.restore();
-  }
-  ctx.restore();
-
-  // hibiscus (bunga raya), outline style, upper-left
-  ctx.save();
-  ctx.translate(152, 198);
-  ctx.strokeStyle = ink;
-  ctx.fillStyle = ink;
-  ctx.lineWidth = 3;
-  for (let i = 0; i < 5; i++) {
-    ctx.save();
-    ctx.rotate((i / 5) * TAU + 0.3);
-    ctx.beginPath();
-    ctx.ellipse(0, -34, 19, 31, 0, 0, TAU);
-    ctx.stroke();
-    ctx.restore();
-  }
+  ctx.lineWidth = 11;
+  const rim = ctx.createLinearGradient(0, cy - R, 0, cy + R);
+  rim.addColorStop(0, '#fcebab');
+  rim.addColorStop(1, '#956f1c');
+  ctx.strokeStyle = rim;
   ctx.beginPath();
-  ctx.arc(0, 0, 8.5, 0, TAU);
-  ctx.fill();
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(2, -2);
-  ctx.lineTo(42, -44);
+  ctx.arc(cx, cy, R - 7, 0, TAU);
   ctx.stroke();
+  ctx.strokeStyle = 'rgba(90,60,10,0.45)';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(46, -48, 6, 0, TAU);
-  ctx.fill();
+  ctx.arc(cx, cy, R - 16, 0, TAU);
+  ctx.stroke();
   ctx.restore();
 
-  // year
-  ctx.fillStyle = ink;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = 'bold 30px Georgia, serif';
-  ctx.fillText('2012', 336, 170);
+  // embossed engraving: a dark down-right shadow + a light up-left highlight,
+  // both behind an ENGRAVE-coloured fill -> looks raised from the metal.
+  const emboss = (draw: () => void) => {
+    ctx.save();
+    ctx.fillStyle = ENGRAVE;
+    ctx.strokeStyle = ENGRAVE;
+    ctx.shadowColor = 'rgba(70,46,8,0.6)';
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2.6;
+    ctx.shadowBlur = 1;
+    draw();
+    ctx.restore();
+    ctx.save();
+    ctx.fillStyle = ENGRAVE;
+    ctx.strokeStyle = ENGRAVE;
+    ctx.shadowColor = 'rgba(255,247,212,0.65)';
+    ctx.shadowOffsetX = -1.6;
+    ctx.shadowOffsetY = -2;
+    ctx.shadowBlur = 1;
+    draw();
+    ctx.restore();
+  };
 
-  // large "50" (right of centre) with a soft emboss, and "SEN"
-  ctx.font = '900 190px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,246,206,0.5)';
-  ctx.fillText('50', 292, 252);
-  ctx.fillStyle = ink;
-  ctx.fillText('50', 295, 248);
-  ctx.font = 'bold 52px Georgia, serif';
-  ctx.fillText('SEN', 300, 356);
+  // "BANK NEGARA MALAYSIA" — bottom arc, wrapping up the sides
+  emboss(() => {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.font = 'bold 27px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const str = 'BANK NEGARA MALAYSIA';
+    const n = str.length;
+    for (let i = 0; i < n; i++) {
+      const a = (i - (n - 1) / 2) * 0.082;
+      ctx.save();
+      ctx.rotate(-a);
+      ctx.translate(0, R - 32);
+      ctx.rotate(Math.PI);
+      ctx.fillText(str[i], 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+  });
+
+  // year, top-right
+  emboss(() => {
+    ctx.font = 'bold 28px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('2012', 332, 150);
+  });
+
+  // hibiscus (bunga raya), upper-left — five petals + curved stamen
+  emboss(() => {
+    ctx.save();
+    ctx.translate(150, 202);
+    ctx.lineWidth = 4;
+    ctx.lineJoin = 'round';
+    for (let i = 0; i < 5; i++) {
+      ctx.save();
+      ctx.rotate((i / 5) * TAU - 0.3);
+      ctx.beginPath();
+      ctx.moveTo(0, -6);
+      ctx.quadraticCurveTo(-22, -26, -12, -52);
+      ctx.quadraticCurveTo(0, -66, 12, -52);
+      ctx.quadraticCurveTo(22, -26, 0, -6);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, 7, 0, TAU);
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(3, -4);
+    ctx.quadraticCurveTo(36, -32, 54, -60);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(56, -62, 5, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // big "50" + "SEN", right of centre, chunky sans
+  emboss(() => {
+    ctx.font = '900 184px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('50', 300, 252);
+  });
+  emboss(() => {
+    ctx.font = 'bold 52px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SEN', 306, 350);
+  });
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
