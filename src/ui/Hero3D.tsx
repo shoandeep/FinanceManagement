@@ -2,55 +2,146 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 /**
- * Lazy-loaded three.js hero — a "songket" centrepiece for first-time visitors.
+ * Lazy-loaded three.js hero — a spinning Malaysian 50 sen coin at the centre,
+ * encased in a procedural diamond-lattice "songket" shell, orbited by smaller
+ * gold coins, with a drifting thread field + rising gold spark motes.
  *
- * A slowly turning faceted ringgit "gem" core wrapped in a woven gold thread knot,
- * encased in a procedural diamond-lattice shell (the kain motif), orbited by gold
- * coins, with a drifting thread field + rising gold spark motes. Pointer-reactive,
- * theme-aware, reduced-motion friendly.
- *
- * The scene is built ONCE. Theme changes are NOT a teardown/rebuild — the loop
- * smoothly lerps the theme-dependent colours/intensities toward the new target, so
- * toggling light/dark glides instead of snapping. Everything is generated in code
- * (no remote assets — strict-CSP safe); GPU resources are disposed and the WebGL
- * context released on unmount.
+ * The coin face is drawn onto an in-memory <canvas> (a CanvasTexture) — NO remote
+ * textures/loaders, so it stays valid under the strict CSP. Built ONCE; theme
+ * changes are a smooth colour lerp, not a rebuild. GPU resources are disposed and
+ * the WebGL context released on unmount.
  */
 
 const GOLD = 0xe8b23a;
 const GOLD_BRIGHT = 0xf6cf63;
 
+/** Draw a ~50-sen coin face (gold, "50 SEN", songket weave, arc legends). */
+function makeCoinTexture(): THREE.CanvasTexture {
+  const S = 512;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const ctx = cv.getContext('2d')!;
+  const cx = S / 2;
+  const cy = S / 2;
+  const R = 250;
+
+  // metallic gold disc
+  const g = ctx.createRadialGradient(cx - 70, cy - 80, 30, cx, cy, R);
+  g.addColorStop(0, '#f8e3a0');
+  g.addColorStop(0.45, '#e6bb56');
+  g.addColorStop(0.82, '#c8962f');
+  g.addColorStop(1, '#a3761f');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.fill();
+
+  // faint songket diamond weave, clipped to the disc
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, R - 8, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(110,75,12,0.18)';
+  ctx.lineWidth = 1.4;
+  for (let x = -2 * R; x <= 2 * R; x += 26) {
+    ctx.beginPath();
+    ctx.moveTo(cx + x, cy - R);
+    ctx.lineTo(cx + x + 2 * R, cy + R);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + x, cy - R);
+    ctx.lineTo(cx + x - 2 * R, cy + R);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // rims + beaded inner ring
+  ctx.strokeStyle = '#8a6418';
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R - 9, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = '#f3d989';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R - 19, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = '#7a5713';
+  for (let i = 0; i < 76; i++) {
+    const a = (i / 76) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(a) * (R - 30), cy + Math.sin(a) * (R - 30), 2.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // arc legends
+  const arc = (str: string, radius: number, base: number, cw: boolean, font: string) => {
+    ctx.save();
+    ctx.fillStyle = '#6b4d11';
+    ctx.font = font;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.translate(cx, cy);
+    const step = 0.092;
+    const n = str.length;
+    for (let i = 0; i < n; i++) {
+      const a = base + (i - (n - 1) / 2) * step * (cw ? 1 : -1);
+      ctx.save();
+      ctx.rotate(a);
+      ctx.translate(0, -radius);
+      if (!cw) ctx.rotate(Math.PI);
+      ctx.fillText(str[i], 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+  };
+  arc('BANK NEGARA MALAYSIA', R - 50, 0, true, 'bold 27px Georgia, serif');
+  arc('RINGGIT MALAYSIA', R - 50, Math.PI, false, 'bold 27px Georgia, serif');
+
+  // central "50" with a soft emboss, and "SEN"
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '900 196px Georgia, serif';
+  ctx.fillStyle = 'rgba(255,245,205,0.55)';
+  ctx.fillText('50', cx - 3, cy - 21);
+  ctx.fillStyle = '#5a3f0d';
+  ctx.fillText('50', cx, cy - 18);
+  ctx.font = 'bold 54px Georgia, serif';
+  ctx.fillStyle = '#5a3f0d';
+  ctx.fillText('SEN', cx, cy + 92);
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
 interface Targets {
-  core: THREE.Color;
   teal: THREE.Color;
   fog: THREE.Color;
   points: THREE.Color;
   fogDensity: number;
   ambient: number;
-  coreEmissive: number;
   latticeOpacity: number;
   coinEmissive: number;
 }
 
 function targetsFor(dark: boolean): Targets {
   return {
-    core: new THREE.Color(dark ? 0x0e2b2b : 0x1f9e88), // luminous jade in light
     teal: new THREE.Color(dark ? 0x2dd4bf : 0x17b39c),
     fog: new THREE.Color(dark ? 0x07100f : 0xf5eedd),
     points: new THREE.Color(dark ? 0x2dd4bf : 0xcf9f3a),
     fogDensity: dark ? 0.035 : 0.024,
-    ambient: dark ? 0.45 : 1.0,
-    coreEmissive: dark ? 0.18 : 0.14,
+    ambient: dark ? 0.5 : 1.0,
     latticeOpacity: dark ? 0.32 : 0.26,
-    coinEmissive: dark ? 0.1 : 0.24,
+    coinEmissive: dark ? 0.12 : 0.26,
   };
 }
 
 export default function Hero3D({ dark }: { dark: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null);
-  // Theme targets the render loop lerps toward (updated when `dark` changes).
   const targetRef = useRef<Targets>(targetsFor(dark));
 
-  // Smoothly retarget colours on theme change — NO rebuild.
   useEffect(() => {
     targetRef.current = targetsFor(dark);
   }, [dark]);
@@ -76,10 +167,10 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     renderer.setSize(width, height);
     mount.appendChild(renderer.domElement);
 
-    // ---------------------------------------------------------------- lights
+    // lights
     const ambient = new THREE.AmbientLight(0xffffff, init.ambient);
     scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xfff4e0, 1.25);
+    const key = new THREE.DirectionalLight(0xfff4e0, 1.35);
     key.position.set(4, 6, 6);
     scene.add(key);
     const goldRim = new THREE.PointLight(GOLD_BRIGHT, 2.0, 60);
@@ -91,6 +182,7 @@ export default function Hero3D({ dark }: { dark: boolean }) {
 
     const geometries: THREE.BufferGeometry[] = [];
     const materials: THREE.Material[] = [];
+    const textures: THREE.Texture[] = [];
     const track = <T extends THREE.BufferGeometry | THREE.Material>(x: T): T => {
       if (x instanceof THREE.BufferGeometry) geometries.push(x);
       else materials.push(x);
@@ -100,40 +192,33 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     const group = new THREE.Group();
     scene.add(group);
 
-    // ---------------------------------------------- faceted ringgit core gem
-    const coreGeo = track(new THREE.IcosahedronGeometry(1.55, 1));
-    const coreMat = track(
+    // ----------------------------------------------- hero 50 sen coin
+    const coinTex = makeCoinTexture();
+    textures.push(coinTex);
+    const faceMat = track(
       new THREE.MeshStandardMaterial({
-        color: init.core.clone(),
-        metalness: 0.55,
-        roughness: 0.3,
-        flatShading: true,
-        emissive: init.teal.clone(),
-        emissiveIntensity: init.coreEmissive,
+        map: coinTex,
+        color: 0xffffff,
+        metalness: 0.35,
+        roughness: 0.5,
+        emissive: 0xffffff,
+        emissiveMap: coinTex,
+        emissiveIntensity: 0.2,
       }),
     );
-    const core = new THREE.Mesh(coreGeo, coreMat);
-    group.add(core);
-
-    // Woven gold thread knot wrapping the core.
-    const knotGeo = track(new THREE.TorusKnotGeometry(1.95, 0.058, 220, 12, 2, 3));
-    const knot = new THREE.Mesh(
-      knotGeo,
-      track(
-        new THREE.MeshStandardMaterial({
-          color: GOLD,
-          metalness: 0.95,
-          roughness: 0.22,
-          emissive: new THREE.Color(GOLD),
-          emissiveIntensity: 0.12,
-        }),
-      ),
+    const edgeMat = track(
+      new THREE.MeshStandardMaterial({ color: 0xd9a93a, metalness: 0.9, roughness: 0.32 }),
     );
-    group.add(knot);
+    const coinGeo = track(new THREE.CylinderGeometry(1.6, 1.6, 0.2, 80));
+    const heroCoin = new THREE.Mesh(coinGeo, [edgeMat, faceMat, faceMat]);
+    heroCoin.rotation.x = Math.PI / 2; // flat face toward the camera
+    const coinGroup = new THREE.Group();
+    coinGroup.add(heroCoin);
+    group.add(coinGroup);
 
     // -------------------------------------- songket diamond-lattice shell
     const latticePts: number[] = [];
-    const R = 2.7;
+    const R = 2.85;
     const rings = 9;
     const seg = 48;
     for (let r = 1; r < rings; r++) {
@@ -167,8 +252,8 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     group.add(lattice);
 
     // ---------------------------------------------------- orbiting gold coins
-    const coinGeo = track(new THREE.CylinderGeometry(0.62, 0.62, 0.12, 40));
-    const coinMat = track(
+    const orbitGeo = track(new THREE.CylinderGeometry(0.6, 0.6, 0.12, 40));
+    const orbitMat = track(
       new THREE.MeshStandardMaterial({
         color: GOLD_BRIGHT,
         metalness: 0.92,
@@ -180,12 +265,12 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     const coins: { mesh: THREE.Mesh; radius: number; speed: number; phase: number; tilt: number; yBob: number }[] = [];
     const COIN_COUNT = 6;
     for (let i = 0; i < COIN_COUNT; i++) {
-      const mesh = new THREE.Mesh(coinGeo, coinMat);
+      const mesh = new THREE.Mesh(orbitGeo, orbitMat);
       mesh.rotation.x = Math.PI / 2.3;
       group.add(mesh);
       coins.push({
         mesh,
-        radius: 3.4 + (i % 3) * 0.55,
+        radius: 3.6 + (i % 3) * 0.55,
         speed: 0.32 + (i % 3) * 0.1,
         phase: (i / COIN_COUNT) * Math.PI * 2,
         tilt: (i % 2 ? 1 : -1) * (0.5 + (i % 3) * 0.25),
@@ -204,13 +289,7 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     const pGeo = track(new THREE.BufferGeometry());
     pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
     const pointsMat = track(
-      new THREE.PointsMaterial({
-        color: init.points.clone(),
-        size: 0.055,
-        transparent: true,
-        opacity: 0.6,
-        sizeAttenuation: true,
-      }),
+      new THREE.PointsMaterial({ color: init.points.clone(), size: 0.055, transparent: true, opacity: 0.6, sizeAttenuation: true }),
     );
     const points = new THREE.Points(pGeo, pointsMat);
     scene.add(points);
@@ -230,19 +309,12 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     const sparks = new THREE.Points(
       sGeo,
       track(
-        new THREE.PointsMaterial({
-          color: GOLD_BRIGHT,
-          size: 0.1,
-          transparent: true,
-          opacity: 0.85,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        }),
+        new THREE.PointsMaterial({ color: GOLD_BRIGHT, size: 0.1, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }),
       ),
     );
     scene.add(sparks);
 
-    // -------------------------------------------------------- pointer parallax
+    // pointer parallax
     const targetRot = { x: 0, y: 0 };
     const onPointer = (e: PointerEvent) => {
       const r = mount.getBoundingClientRect();
@@ -256,14 +328,11 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     const render = () => {
       const t = (performance.now() - start) / 1000;
 
-      // --- smooth theme lerp (snaps instantly under reduced motion) ----------
+      // smooth theme lerp (snaps under reduced motion)
       const tg = targetRef.current;
       const k = reduceMotion ? 1 : 0.08;
-      coreMat.color.lerp(tg.core, k);
-      coreMat.emissive.lerp(tg.teal, k);
-      coreMat.emissiveIntensity += (tg.coreEmissive - coreMat.emissiveIntensity) * k;
       latticeMat.opacity += (tg.latticeOpacity - latticeMat.opacity) * k;
-      coinMat.emissiveIntensity += (tg.coinEmissive - coinMat.emissiveIntensity) * k;
+      orbitMat.emissiveIntensity += (tg.coinEmissive - orbitMat.emissiveIntensity) * k;
       pointsMat.color.lerp(tg.points, k);
       fog.color.lerp(tg.fog, k);
       fog.density += (tg.fogDensity - fog.density) * k;
@@ -271,10 +340,9 @@ export default function Hero3D({ dark }: { dark: boolean }) {
       tealFill.color.lerp(tg.teal, k);
 
       if (!reduceMotion) {
-        core.rotation.y = t * 0.3;
-        core.rotation.x = Math.sin(t * 0.4) * 0.22;
-        knot.rotation.y = -t * 0.22;
-        knot.rotation.z = t * 0.16;
+        // spin the coin like a flipping ringgit
+        coinGroup.rotation.y = t * 0.7;
+        coinGroup.rotation.z = Math.sin(t * 0.35) * 0.08;
         lattice.rotation.y = t * 0.08;
         lattice.rotation.x = Math.sin(t * 0.2) * 0.15;
         points.rotation.y = t * 0.035;
@@ -321,13 +389,11 @@ export default function Hero3D({ dark }: { dark: boolean }) {
       mount.removeEventListener('pointermove', onPointer);
       renderer.domElement.remove();
       renderer.dispose();
-      // Release the GPU context so repeated mount/unmount can't exhaust the
-      // browser's WebGL context limit. (Required — do not remove.)
       renderer.forceContextLoss();
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
+      textures.forEach((tx) => tx.dispose());
     };
-    // Build ONCE — theme changes are handled by the lerp above, not a rebuild.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
