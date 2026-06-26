@@ -19,6 +19,7 @@ import {
 } from './crypto';
 import { metaGet, metaPut, vaultGet, vaultPut, closeDb, DB_NAME } from './db';
 import { SCHEMA_VERSION, type AppData } from '../model/types';
+import { normalizeAppData } from '../model/defaults';
 
 const VERIFIER_PLAINTEXT = 'finance-guru:verifier:v1';
 
@@ -103,7 +104,7 @@ export async function loadAppData(key: CryptoKey): Promise<AppData | null> {
     throw new CorruptDataError();
   }
   try {
-    return JSON.parse(json) as AppData;
+    return normalizeAppData(JSON.parse(json) as AppData);
   } catch {
     throw new CorruptDataError();
   }

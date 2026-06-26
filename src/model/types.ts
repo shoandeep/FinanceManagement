@@ -71,6 +71,22 @@ export interface Expense {
   note?: string;
 }
 
+/** Where idle (non-investment) cash rests: banks, e-wallets, fixed deposits. */
+export type CashAccountType = 'bank' | 'ewallet' | 'fd';
+
+export interface CashAccount {
+  id: string;
+  name: string;
+  type: CashAccountType;
+  balanceSen: number;
+  /** Base annual interest rate (%, p.a.). */
+  ratePercent: number;
+  /** Optional limited-time promo rate (%, p.a.) — used while active. */
+  promoRatePercent?: number;
+  /** ISO date the promo rate applies until, inclusive (YYYY-MM-DD). */
+  promoEnds?: string;
+}
+
 export interface AppData {
   schemaVersion: number;
   pay: PayState;
@@ -81,4 +97,8 @@ export interface AppData {
   investments: Investment[];
   variableCategories: VariableCategory[];
   expenses: Expense[];
+  /** Non-investment cash parked in banks/e-wallets/FDs (Advanced view in Save). */
+  cashAccounts: CashAccount[];
+  /** Whether the Advanced (cash & savings) view is enabled in Save. */
+  advancedSave: boolean;
 }

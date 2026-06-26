@@ -3,15 +3,240 @@ import { deriveFinances } from '../../state/selectors';
 import { todayISO } from '../../budget/dates';
 import { newId } from '../../model/defaults';
 import { formatSen } from '../../money/money';
-import { Card, Money, MoneyInput, TextInput, Button, ProgressBar, Stat, Disclaimer } from '../components';
+import { cashSummary } from '../../budget/cash';
+import type { CashAccountType } from '../../model/types';
+import { Card, Money, MoneyInput, TextInput, Select, Button, ProgressBar, Stat, Disclaimer } from '../components';
+
+const ACCOUNT_TYPES: { id: CashAccountType; label: string }[] = [
+  { id: 'bank', label: 'Bank' },
+  { id: 'ewallet', label: 'E-wallet' },
+  { id: 'fd', label: 'Fixed deposit' },
+];
+
+const rateInputCls =
+  'mt-1 w-full rounded-lg border border-line bg-surface px-2 py-2 text-right text-sm tabular-nums outline-none focus:border-primary focus:ring-2 focus:ring-ring/30';
+
+function RatePct({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number | undefined;
+  onChange: (n: number | undefined) => void;
+}) {
+  return (
+    <label className="text-xs text-ink-faint">
+      {label}
+      <div className="mt-1 flex items-center gap-1">
+        <input
+          type="number"
+          min={0}
+          max={100}
+          step={0.01}
+          value={value ?? ''}
+          placeholder="0"
+          aria-label={label}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange(v === '' ? undefined : Math.max(0, Math.min(100, Number(v) || 0)));
+          }}
+          className="w-full rounded-lg border border-line bg-surface px-2 py-2 text-right text-sm tabular-nums outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+        />
+        <span className="text-sm text-ink-faint">%</span>
+      </div>
+    </label>
+  );
+}
+
+/** Advanced view: where idle (non-investment) cash rests + its potential earnings. */
+function CashSavings({ today }: { today: string }) {
+  const { data, update } = useVault();
+  if (!data) return null;
+  const sum = cashSummary(data.cashAccounts, today);
+  const fmtDate = (iso: string) =>
+    new Date(`${iso}T00:00:00`).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
+
+  return (
+    <Card
+      title="Where your cash rests"
+      className="kain-edge"
+      action={
+        <Button
+          variant="ghost"
+          className="px-2 py-1 text-xs"
+          onClick={() =>
+            update((d) =>
+              d.cashAccounts.push({ id: newId(), name: '', type: 'bank', balanceSen: 0, ratePercent: 0 }),
+            )
+          }
+        >
+          + Add
+        </Button>
+      }
+    >
+      {data.cashAccounts.length === 0 ? (
+        <p className="text-sm text-ink-faint">
+          Add your banks, e-wallets and fixed deposits with their rates to see how much your idle cash
+          could earn — and spot the best place to park it.
+        </p>
+      ) : (
+        <>
+          <div className="mb-3 grid grid-cols-3 gap-3">
+            <Stat label="Resting" value={<Money sen={sum.totalBalanceSen} />} />
+            <Stat
+              label="Potential / yr"
+              value={<Money sen={sum.totalAnnualEarningsSen} />}
+              tone="positive"
+              sub={`${formatSen(sum.totalMonthlyEarningsSen)}/mo`}
+            />
+            <Stat label="Blended rate" value={`${sum.blendedRatePercent.toFixed(2)}%`} tone="muted" />
+          </div>
+          <ul className="space-y-3">
+            {data.cashAccounts.map((acc, i) => {
+              const s = sum.accounts[i];
+              const patch = (fn: (a: typeof acc) => void) =>
+                update((d) => {
+                  const it = d.cashAccounts.find((x) => x.id === acc.id);
+                  if (it) fn(it);
+                });
+              return (
+                <li key={acc.id} className="rounded-xl border border-line p-3">
+                  <div className="flex items-center gap-2">
+                    <TextInput
+                      aria-label="Account name"
+                      placeholder="e.g. RYT Bank"
+                      value={acc.name}
+                      onChange={(e) => patch((a) => (a.name = e.target.value))}
+                    />
+                    <Select
+                      aria-label="Type"
+                      className="w-32"
+                      value={acc.type}
+                      onChange={(e) => patch((a) => (a.type = e.target.value as CashAccountType))}
+                    >
+                      {ACCOUNT_TYPES.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <Button
+                      variant="danger"
+                      className="px-2"
+                      aria-label={`Remove ${acc.name || 'account'}`}
+                      onClick={() => update((d) => void (d.cashAccounts = d.cashAccounts.filter((x) => x.id !== acc.id)))}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <label className="text-xs text-ink-faint">
+                      Balance
+                      <div className="mt-1">
+                        <MoneyInput valueSen={acc.balanceSen} onChangeSen={(sen) => patch((a) => (a.balanceSen = sen))} />
+                      </div>
+                    </label>
+                    <RatePct
+                      label="Base rate (p.a.)"
+                      value={acc.ratePercent}
+                      onChange={(n) => patch((a) => (a.ratePercent = n ?? 0))}
+                    />
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <RatePct
+                      label="Promo rate (optional)"
+                      value={acc.promoRatePercent}
+                      onChange={(n) =>
+                        patch((a) => {
+                          if (n == null) delete a.promoRatePercent;
+                          else a.promoRatePercent = n;
+                        })
+                      }
+                    />
+                    <label className="text-xs text-ink-faint">
+                      Promo until
+                      <input
+                        type="date"
+                        value={acc.promoEnds ?? ''}
+                        aria-label="Promo end date"
+                        onChange={(e) =>
+                          patch((a) => {
+                            if (e.target.value) a.promoEnds = e.target.value;
+                            else delete a.promoEnds;
+                          })
+                        }
+                        className={rateInputCls + ' text-left'}
+                      />
+                    </label>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+                    <span
+                      className={`rounded-md px-2 py-0.5 font-semibold ${
+                        s.promoActive ? 'bg-gold/15 text-gold' : 'bg-primary/10 text-primary'
+                      }`}
+                    >
+                      {s.effectiveRatePercent.toFixed(2)}%
+                      {s.promoActive ? ` promo${acc.promoEnds ? ` · until ${fmtDate(acc.promoEnds)}` : ''}` : ''}
+                    </span>
+                    <span className="tabular-nums text-ink-soft">
+                      ≈ {formatSen(s.annualEarningsSen)}/yr · {formatSen(s.monthlyEarningsSen)}/mo
+                    </span>
+                  </div>
+                  {s.promoActive && (
+                    <p className="mt-1 text-[11px] text-ink-faint">
+                      Reverts to base {s.baseRatePercent.toFixed(2)}% after the promo ends.
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-3 text-[11px] text-ink-faint">
+            Potential earnings are simple estimates (balance × rate ÷ year). Actual interest depends on
+            each provider's terms, tiers and compounding — not advice.
+          </p>
+        </>
+      )}
+    </Card>
+  );
+}
 
 export function SavingsScreen() {
   const { data, update } = useVault();
   if (!data) return null;
-  const f = deriveFinances(data, todayISO());
+  const today = todayISO();
+  const f = deriveFinances(data, today);
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface/70 px-4 py-3">
+        <div>
+          <p className="text-sm font-semibold text-ink">Advanced</p>
+          <p className="text-xs text-ink-faint">
+            Track where idle cash rests (banks, e-wallets, fixed deposits) and its potential earnings.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={data.advancedSave}
+          aria-label="Toggle advanced cash tracking"
+          onClick={() => update((d) => void (d.advancedSave = !d.advancedSave))}
+          className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+            data.advancedSave ? 'bg-primary' : 'bg-surface-2 ring-1 ring-inset ring-line'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+              data.advancedSave ? 'translate-x-[22px]' : 'translate-x-0.5'
+            }`}
+          />
+        </button>
+      </div>
+
+      {data.advancedSave && <CashSavings today={today} />}
+
       <Card title="Emergency fund">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm">

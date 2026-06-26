@@ -35,5 +35,12 @@ export function createDefaultAppData(): AppData {
     investments: [],
     variableCategories: defaultVariableCategories(),
     expenses: [],
+    cashAccounts: [],
+    advancedSave: false,
   };
+}
+
+/** Fill in any keys missing from older saved data (forward-compatible load). */
+export function normalizeAppData(parsed: AppData): AppData {
+  return { ...createDefaultAppData(), ...parsed };
 }
