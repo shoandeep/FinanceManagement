@@ -2,113 +2,132 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 /**
- * Lazy-loaded three.js hero — a spinning Malaysian 50 sen coin at the centre,
- * encased in a procedural diamond-lattice "songket" shell, orbited by smaller
- * gold coins, with a drifting thread field + rising gold spark motes.
+ * Lazy-loaded three.js hero — a Malaysian 50 sen coin at the centre, facing the
+ * viewer (the "50" stays upright; it only tilts gently, never spinning edge-on),
+ * encased in a procedural diamond-lattice "songket" shell, orbited by smaller gold
+ * coins, with a drifting thread field + rising gold spark motes.
  *
  * The coin face is drawn onto an in-memory <canvas> (a CanvasTexture) — NO remote
- * textures/loaders, so it stays valid under the strict CSP. Built ONCE; theme
- * changes are a smooth colour lerp, not a rebuild. GPU resources are disposed and
- * the WebGL context released on unmount.
+ * textures/loaders — so it stays valid under the strict CSP. The face uses a flat
+ * CircleGeometry so the texture maps upright. Built ONCE; theme changes are a
+ * smooth colour lerp, not a rebuild. GPU resources + texture disposed on unmount.
  */
 
 const GOLD = 0xe8b23a;
 const GOLD_BRIGHT = 0xf6cf63;
+const TAU = Math.PI * 2;
 
-/** Draw a ~50-sen coin face (gold, "50 SEN", songket weave, arc legends). */
+/** Draw the 50 sen obverse: gold disc, scalloped edge, hibiscus, "BANK NEGARA
+ *  MALAYSIA", year, and a large "50 / SEN". */
 function makeCoinTexture(): THREE.CanvasTexture {
   const S = 512;
+  const cx = S / 2;
+  const cy = S / 2;
+  const R = 248;
   const cv = document.createElement('canvas');
   cv.width = cv.height = S;
   const ctx = cv.getContext('2d')!;
-  const cx = S / 2;
-  const cy = S / 2;
-  const R = 250;
+  const ink = '#5a3f0d';
 
   // metallic gold disc
   const g = ctx.createRadialGradient(cx - 70, cy - 80, 30, cx, cy, R);
   g.addColorStop(0, '#f8e3a0');
-  g.addColorStop(0.45, '#e6bb56');
-  g.addColorStop(0.82, '#c8962f');
-  g.addColorStop(1, '#a3761f');
+  g.addColorStop(0.5, '#e4ba56');
+  g.addColorStop(0.85, '#caa038');
+  g.addColorStop(1, '#a8801f');
   ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.arc(cx, cy, R, 0, TAU);
   ctx.fill();
 
-  // faint songket diamond weave, clipped to the disc
+  // scalloped edge (3rd-series coin), then refill the inner disc
+  ctx.fillStyle = '#bd942d';
+  for (let i = 0; i < 42; i++) {
+    const a = (i / 42) * TAU;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(a) * R, cy + Math.sin(a) * R, 7.5, 0, TAU);
+    ctx.fill();
+  }
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R - 4, 0, TAU);
+  ctx.fill();
+
+  // faint horizontal guilloché background, clipped to the disc
   ctx.save();
   ctx.beginPath();
-  ctx.arc(cx, cy, R - 8, 0, Math.PI * 2);
+  ctx.arc(cx, cy, R - 8, 0, TAU);
   ctx.clip();
-  ctx.strokeStyle = 'rgba(110,75,12,0.18)';
-  ctx.lineWidth = 1.4;
-  for (let x = -2 * R; x <= 2 * R; x += 26) {
+  ctx.strokeStyle = 'rgba(120,85,15,0.09)';
+  ctx.lineWidth = 1;
+  for (let y = 24; y < S; y += 7) {
     ctx.beginPath();
-    ctx.moveTo(cx + x, cy - R);
-    ctx.lineTo(cx + x + 2 * R, cy + R);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx + x, cy - R);
-    ctx.lineTo(cx + x - 2 * R, cy + R);
+    ctx.moveTo(0, y);
+    ctx.lineTo(S, y);
     ctx.stroke();
   }
   ctx.restore();
 
-  // rims + beaded inner ring
-  ctx.strokeStyle = '#8a6418';
-  ctx.lineWidth = 9;
-  ctx.beginPath();
-  ctx.arc(cx, cy, R - 9, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.strokeStyle = '#f3d989';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(cx, cy, R - 19, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.fillStyle = '#7a5713';
-  for (let i = 0; i < 76; i++) {
-    const a = (i / 76) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.arc(cx + Math.cos(a) * (R - 30), cy + Math.sin(a) * (R - 30), 2.1, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // arc legends
-  const arc = (str: string, radius: number, base: number, cw: boolean, font: string) => {
-    ctx.save();
-    ctx.fillStyle = '#6b4d11';
-    ctx.font = font;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.translate(cx, cy);
-    const step = 0.092;
-    const n = str.length;
-    for (let i = 0; i < n; i++) {
-      const a = base + (i - (n - 1) / 2) * step * (cw ? 1 : -1);
-      ctx.save();
-      ctx.rotate(a);
-      ctx.translate(0, -radius);
-      if (!cw) ctx.rotate(Math.PI);
-      ctx.fillText(str[i], 0, 0);
-      ctx.restore();
-    }
-    ctx.restore();
-  };
-  arc('BANK NEGARA MALAYSIA', R - 50, 0, true, 'bold 27px Georgia, serif');
-  arc('RINGGIT MALAYSIA', R - 50, Math.PI, false, 'bold 27px Georgia, serif');
-
-  // central "50" with a soft emboss, and "SEN"
+  // "BANK NEGARA MALAYSIA" along the top arc
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.fillStyle = ink;
+  ctx.font = 'bold 27px Georgia, serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = '900 196px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,245,205,0.55)';
-  ctx.fillText('50', cx - 3, cy - 21);
-  ctx.fillStyle = '#5a3f0d';
-  ctx.fillText('50', cx, cy - 18);
-  ctx.font = 'bold 54px Georgia, serif';
-  ctx.fillStyle = '#5a3f0d';
-  ctx.fillText('SEN', cx, cy + 92);
+  const legend = 'BANK NEGARA MALAYSIA';
+  for (let i = 0; i < legend.length; i++) {
+    const a = (i - (legend.length - 1) / 2) * 0.082;
+    ctx.save();
+    ctx.rotate(a);
+    ctx.translate(0, -(R - 36));
+    ctx.fillText(legend[i], 0, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // hibiscus (bunga raya), outline style, upper-left
+  ctx.save();
+  ctx.translate(152, 198);
+  ctx.strokeStyle = ink;
+  ctx.fillStyle = ink;
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 5; i++) {
+    ctx.save();
+    ctx.rotate((i / 5) * TAU + 0.3);
+    ctx.beginPath();
+    ctx.ellipse(0, -34, 19, 31, 0, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.beginPath();
+  ctx.arc(0, 0, 8.5, 0, TAU);
+  ctx.fill();
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(2, -2);
+  ctx.lineTo(42, -44);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(46, -48, 6, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+
+  // year
+  ctx.fillStyle = ink;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 30px Georgia, serif';
+  ctx.fillText('2012', 336, 170);
+
+  // large "50" (right of centre) with a soft emboss, and "SEN"
+  ctx.font = '900 190px Georgia, serif';
+  ctx.fillStyle = 'rgba(255,246,206,0.5)';
+  ctx.fillText('50', 292, 252);
+  ctx.fillStyle = ink;
+  ctx.fillText('50', 295, 248);
+  ctx.font = 'bold 52px Georgia, serif';
+  ctx.fillText('SEN', 300, 356);
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -132,8 +151,8 @@ function targetsFor(dark: boolean): Targets {
     fog: new THREE.Color(dark ? 0x07100f : 0xf5eedd),
     points: new THREE.Color(dark ? 0x2dd4bf : 0xcf9f3a),
     fogDensity: dark ? 0.035 : 0.024,
-    ambient: dark ? 0.5 : 1.0,
-    latticeOpacity: dark ? 0.32 : 0.26,
+    ambient: dark ? 0.55 : 1.05,
+    latticeOpacity: dark ? 0.3 : 0.24,
     coinEmissive: dark ? 0.12 : 0.26,
   };
 }
@@ -170,8 +189,8 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     // lights
     const ambient = new THREE.AmbientLight(0xffffff, init.ambient);
     scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xfff4e0, 1.35);
-    key.position.set(4, 6, 6);
+    const key = new THREE.DirectionalLight(0xfff4e0, 1.4);
+    key.position.set(3, 5, 7);
     scene.add(key);
     const goldRim = new THREE.PointLight(GOLD_BRIGHT, 2.0, 60);
     goldRim.position.set(-5, -2, 5);
@@ -192,7 +211,7 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     const group = new THREE.Group();
     scene.add(group);
 
-    // ----------------------------------------------- hero 50 sen coin
+    // ----------------------------------------------- hero 50 sen coin (upright)
     const coinTex = makeCoinTexture();
     textures.push(coinTex);
     const faceMat = track(
@@ -203,17 +222,25 @@ export default function Hero3D({ dark }: { dark: boolean }) {
         roughness: 0.5,
         emissive: 0xffffff,
         emissiveMap: coinTex,
-        emissiveIntensity: 0.2,
+        emissiveIntensity: 0.22,
       }),
     );
     const edgeMat = track(
       new THREE.MeshStandardMaterial({ color: 0xd9a93a, metalness: 0.9, roughness: 0.32 }),
     );
-    const coinGeo = track(new THREE.CylinderGeometry(1.6, 1.6, 0.2, 80));
-    const heroCoin = new THREE.Mesh(coinGeo, [edgeMat, faceMat, faceMat]);
-    heroCoin.rotation.x = Math.PI / 2; // flat face toward the camera
+    const COIN_R = 1.62;
+    const COIN_H = 0.2;
+    const faceGeo = track(new THREE.CircleGeometry(COIN_R, 72));
+    const rimGeo = track(new THREE.CylinderGeometry(COIN_R, COIN_R, COIN_H, 72, 1, true));
+    const front = new THREE.Mesh(faceGeo, faceMat);
+    front.position.z = COIN_H / 2;
+    const back = new THREE.Mesh(faceGeo, faceMat);
+    back.position.z = -COIN_H / 2;
+    back.rotation.y = Math.PI;
+    const rim = new THREE.Mesh(rimGeo, edgeMat);
+    rim.rotation.x = Math.PI / 2; // ring around the Z-facing coin
     const coinGroup = new THREE.Group();
-    coinGroup.add(heroCoin);
+    coinGroup.add(front, back, rim);
     group.add(coinGroup);
 
     // -------------------------------------- songket diamond-lattice shell
@@ -226,8 +253,8 @@ export default function Hero3D({ dark }: { dark: boolean }) {
       const y = Math.cos(phi) * R;
       const rad = Math.sin(phi) * R;
       for (let s = 0; s < seg; s++) {
-        const a0 = (s / seg) * Math.PI * 2;
-        const a1 = ((s + 1) / seg) * Math.PI * 2;
+        const a0 = (s / seg) * TAU;
+        const a1 = ((s + 1) / seg) * TAU;
         latticePts.push(Math.cos(a0) * rad, y, Math.sin(a0) * rad);
         latticePts.push(Math.cos(a1) * rad, y, Math.sin(a1) * rad);
       }
@@ -236,8 +263,8 @@ export default function Hero3D({ dark }: { dark: boolean }) {
       for (let r = 0; r < rings; r++) {
         const phi0 = (r / rings) * Math.PI;
         const phi1 = ((r + 1) / rings) * Math.PI;
-        const a0 = (s / seg) * Math.PI * 2;
-        const a1 = ((s + 1) / seg) * Math.PI * 2;
+        const a0 = (s / seg) * TAU;
+        const a1 = ((s + 1) / seg) * TAU;
         const p0 = [Math.cos(a0) * Math.sin(phi0) * R, Math.cos(phi0) * R, Math.sin(a0) * Math.sin(phi0) * R];
         const p1 = [Math.cos(a1) * Math.sin(phi1) * R, Math.cos(phi1) * R, Math.sin(a1) * Math.sin(phi1) * R];
         latticePts.push(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2]);
@@ -252,7 +279,7 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     group.add(lattice);
 
     // ---------------------------------------------------- orbiting gold coins
-    const orbitGeo = track(new THREE.CylinderGeometry(0.6, 0.6, 0.12, 40));
+    const orbitGeo = track(new THREE.CylinderGeometry(0.58, 0.58, 0.12, 40));
     const orbitMat = track(
       new THREE.MeshStandardMaterial({
         color: GOLD_BRIGHT,
@@ -270,9 +297,9 @@ export default function Hero3D({ dark }: { dark: boolean }) {
       group.add(mesh);
       coins.push({
         mesh,
-        radius: 3.6 + (i % 3) * 0.55,
+        radius: 3.7 + (i % 3) * 0.55,
         speed: 0.32 + (i % 3) * 0.1,
-        phase: (i / COIN_COUNT) * Math.PI * 2,
+        phase: (i / COIN_COUNT) * TAU,
         tilt: (i % 2 ? 1 : -1) * (0.5 + (i % 3) * 0.25),
         yBob: 0.3 + (i % 2) * 0.25,
       });
@@ -318,8 +345,8 @@ export default function Hero3D({ dark }: { dark: boolean }) {
     const targetRot = { x: 0, y: 0 };
     const onPointer = (e: PointerEvent) => {
       const r = mount.getBoundingClientRect();
-      targetRot.x = ((e.clientX - r.left) / r.width - 0.5) * 0.7;
-      targetRot.y = ((e.clientY - r.top) / r.height - 0.5) * 0.7;
+      targetRot.x = ((e.clientX - r.left) / r.width - 0.5) * 0.6;
+      targetRot.y = ((e.clientY - r.top) / r.height - 0.5) * 0.6;
     };
     mount.addEventListener('pointermove', onPointer);
 
@@ -340,9 +367,10 @@ export default function Hero3D({ dark }: { dark: boolean }) {
       tealFill.color.lerp(tg.teal, k);
 
       if (!reduceMotion) {
-        // spin the coin like a flipping ringgit
-        coinGroup.rotation.y = t * 0.7;
-        coinGroup.rotation.z = Math.sin(t * 0.35) * 0.08;
+        // coin faces the viewer with the 50 upright — gentle tilt + bob only
+        coinGroup.rotation.y = Math.sin(t * 0.5) * 0.2;
+        coinGroup.rotation.x = Math.sin(t * 0.35) * 0.1;
+        coinGroup.position.y = Math.sin(t * 0.7) * 0.08;
         lattice.rotation.y = t * 0.08;
         lattice.rotation.x = Math.sin(t * 0.2) * 0.15;
         points.rotation.y = t * 0.035;
