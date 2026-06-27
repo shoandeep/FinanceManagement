@@ -87,6 +87,35 @@ export interface CashAccount {
   promoEnds?: string;
 }
 
+/** A recurring (or one-off) money event shown on the calendar. */
+export type EventType =
+  | 'income' // paycheck / money in
+  | 'subscription'
+  | 'savings' // auto-deposit to savings
+  | 'investment' // auto-deposit / DCA
+  | 'bnpl' // buy-now-pay-later instalment
+  | 'creditcard' // card payment due
+  | 'bill';
+
+export type EventFreq = 'monthly' | 'weekly' | 'yearly' | 'once';
+
+export interface RecurringEvent {
+  id: string;
+  name: string;
+  type: EventType;
+  amountSen: number;
+  freq: EventFreq;
+  /** monthly / yearly: 1-31 (clamped to month length). */
+  dayOfMonth?: number;
+  /** weekly: 0=Mon … 6=Sun. */
+  weekday?: number;
+  /** yearly: 1-12. */
+  month?: number;
+  /** once: a specific ISO date (YYYY-MM-DD). */
+  dateISO?: string;
+  note?: string;
+}
+
 export interface AppData {
   schemaVersion: number;
   pay: PayState;
@@ -101,4 +130,6 @@ export interface AppData {
   cashAccounts: CashAccount[];
   /** Whether the Advanced (cash & savings) view is enabled in Save. */
   advancedSave: boolean;
+  /** Recurring money events for the calendar (subscriptions, income, BNPL, …). */
+  recurringEvents: RecurringEvent[];
 }

@@ -37,6 +37,7 @@ export function createDefaultAppData(): AppData {
     expenses: [],
     cashAccounts: [],
     advancedSave: false,
+    recurringEvents: [],
   };
 }
 

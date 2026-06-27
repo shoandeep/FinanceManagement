@@ -7,8 +7,9 @@ import { PayScreen } from './screens/PayScreen';
 import { CostsScreen } from './screens/CostsScreen';
 import { SavingsScreen } from './screens/SavingsScreen';
 import { SpendScreen } from './screens/SpendScreen';
+import { CalendarScreen } from './screens/CalendarScreen';
 
-type TabId = 'home' | 'pay' | 'costs' | 'save' | 'spend';
+type TabId = 'home' | 'pay' | 'costs' | 'save' | 'spend' | 'calendar';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: '◎' },
@@ -16,6 +17,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'costs', label: 'Budget', icon: '▤' },
   { id: 'save', label: 'Save', icon: '◆' },
   { id: 'spend', label: 'Spend', icon: '◷' },
+  { id: 'calendar', label: 'Calendar', icon: '▦' },
 ];
 
 function GearIcon() {
@@ -45,6 +47,7 @@ export function AppShell() {
     costs: <CostsScreen />,
     save: <SavingsScreen />,
     spend: <SpendScreen />,
+    calendar: <CalendarScreen />,
   };
 
   return (
