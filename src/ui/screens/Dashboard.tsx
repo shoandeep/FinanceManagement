@@ -3,6 +3,7 @@ import { deriveFinances } from '../../state/selectors';
 import { todayISO } from '../../budget/dates';
 import { formatSen } from '../../money/money';
 import { Card, Money, ProgressBar, Stat, Disclaimer } from '../components';
+import { Inbox } from '../Inbox';
 
 export function Dashboard({
   onGoToPay,
@@ -21,6 +22,8 @@ export function Dashboard({
 
   return (
     <div className="space-y-4 lg:columns-2 lg:gap-4 lg:space-y-0">
+      <Inbox />
+
       {data.pay.grossSen === 0 && (
         <Card className="break-inside-avoid lg:mb-4">
           <div className="flex items-center justify-between gap-3">

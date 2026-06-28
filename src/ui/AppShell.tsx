@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useVault } from '../state/VaultContext';
 import { ThemeToggle } from './ThemeToggle';
 import { Settings } from './Settings';
+import { QuickCapture } from './QuickCapture';
 import { Dashboard } from './screens/Dashboard';
 import { PayScreen } from './screens/PayScreen';
 import { CostsScreen } from './screens/CostsScreen';
@@ -33,7 +34,17 @@ export function AppShell() {
   const { exit, goToAuth, session } = useVault();
   const [tab, setTab] = useState<TabId>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [captureOpen, setCaptureOpen] = useState(false);
   const wide = tab === 'home';
+
+  // Deep link from the PWA home-screen shortcut: /?action=add opens Quick add.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'add') {
+      setCaptureOpen(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const screens: Record<TabId, ReactNode> = {
     home: (
@@ -62,7 +73,14 @@ export function AppShell() {
             Finance Guru
           </span>
         </div>
-        <nav aria-label="Sections" className="mt-7 flex flex-1 flex-col gap-1">
+        <button
+          onClick={() => setCaptureOpen(true)}
+          className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition hover:brightness-110 hover:-translate-y-px"
+        >
+          <span aria-hidden="true" className="text-lg leading-none">＋</span>
+          Quick add
+        </button>
+        <nav aria-label="Sections" className="mt-4 flex flex-1 flex-col gap-1">
           {TABS.map((t) => {
             const active = tab === t.id;
             return (
@@ -212,6 +230,16 @@ export function AppShell() {
         </nav>
       </div>
 
+      {/* Mobile floating Quick-add button */}
+      <button
+        onClick={() => setCaptureOpen(true)}
+        aria-label="Quick add expense"
+        className="fixed bottom-[5.25rem] right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-3xl font-light text-primary-contrast shadow-lg ring-1 ring-gold/30 transition active:scale-90 lg:hidden"
+      >
+        <span aria-hidden="true" className="-mt-0.5 leading-none">＋</span>
+      </button>
+
+      {captureOpen && <QuickCapture onClose={() => setCaptureOpen(false)} />}
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
     </div>
   );
