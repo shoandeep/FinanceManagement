@@ -113,6 +113,8 @@ export interface RecurringEvent {
   month?: number;
   /** once: a specific ISO date (YYYY-MM-DD). */
   dateISO?: string;
+  /** Optional emoji override; blank → auto-detected from the name/type. */
+  emoji?: string;
   note?: string;
 }
 

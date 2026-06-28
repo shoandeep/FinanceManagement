@@ -3,7 +3,7 @@
  * deterministic — operates on 'YYYY-MM-DD' local dates. Integer sen.
  */
 import { addSen, type Sen } from '../money/money';
-import { daysInMonth, dayOfWeekMon0, parseISO } from './dates';
+import { addDaysISO, daysInMonth, dayOfWeekMon0, parseISO } from './dates';
 import type { EventType, RecurringEvent } from '../model/types';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -74,4 +74,35 @@ export function summarize(days: DayEvents[]): PeriodSummary {
     }
   }
   return { inSen, outSen, netSen: inSen - outSen, count };
+}
+
+/** Signed net flow on a single date: income adds, everything else subtracts. */
+export function dayNet(events: RecurringEvent[], dateISO: string): Sen {
+  let net = 0;
+  for (const e of eventsOnDate(events, dateISO)) {
+    net += eventDirection(e.type) === 'in' ? e.amountSen : -e.amountSen;
+  }
+  return net;
+}
+
+/**
+ * Forward, day-by-day projected balance starting from `anchorSen` as the balance
+ * BEFORE `fromISO`. The value for each date is the balance after that day's
+ * events. Inclusive of both ends; capped to avoid runaway loops.
+ */
+export function projectBalances(
+  events: RecurringEvent[],
+  anchorSen: Sen,
+  fromISO: string,
+  toISO: string,
+): Map<string, Sen> {
+  const out = new Map<string, Sen>();
+  let bal = anchorSen;
+  let cur = fromISO;
+  for (let i = 0; i < 800 && cur <= toISO; i++) {
+    bal += dayNet(events, cur);
+    out.set(cur, bal);
+    cur = addDaysISO(cur, 1);
+  }
+  return out;
 }

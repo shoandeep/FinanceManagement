@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { occursOn, monthList, summarize } from './calendar';
+import { occursOn, monthList, summarize, dayNet, projectBalances } from './calendar';
 import type { RecurringEvent } from '../model/types';
 
 const ev = (p: Partial<RecurringEvent>): RecurringEvent => ({
@@ -64,5 +64,19 @@ describe('month list + summary', () => {
     expect(s.outSen).toBe(17_500); // 5,500 + 12,000
     expect(s.netSen).toBe(632_500);
     expect(s.count).toBe(3);
+  });
+
+  it('nets a single day (income up, outflow down)', () => {
+    expect(dayNet(events, '2026-06-05')).toBe(-17_500); // Netflix + Atome
+    expect(dayNet(events, '2026-06-25')).toBe(650_000); // Salary
+    expect(dayNet(events, '2026-06-10')).toBe(0); // nothing
+  });
+
+  it('projects a forward running balance', () => {
+    const bal = projectBalances(events, 100_000, '2026-06-04', '2026-06-26');
+    expect(bal.get('2026-06-04')).toBe(100_000); // no events
+    expect(bal.get('2026-06-05')).toBe(82_500); // 100,000 - 17,500
+    expect(bal.get('2026-06-24')).toBe(82_500); // unchanged until payday
+    expect(bal.get('2026-06-25')).toBe(732_500); // + salary
   });
 });
