@@ -9,6 +9,10 @@ import { CostsScreen } from './screens/CostsScreen';
 import { SavingsScreen } from './screens/SavingsScreen';
 import { SpendScreen } from './screens/SpendScreen';
 import { CalendarScreen } from './screens/CalendarScreen';
+import { parsePaymentText } from '../budget/payparse';
+import { pendingMaterializations } from '../budget/autolog';
+import { todayISO, addDaysISO } from '../budget/dates';
+import { newId } from '../model/defaults';
 
 type TabId = 'home' | 'pay' | 'costs' | 'save' | 'spend' | 'calendar';
 
@@ -31,20 +35,59 @@ function GearIcon() {
 }
 
 export function AppShell() {
-  const { exit, goToAuth, session } = useVault();
+  const { exit, goToAuth, session, data, update } = useVault();
   const [tab, setTab] = useState<TabId>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [captureOpen, setCaptureOpen] = useState(false);
+  const [captureInit, setCaptureInit] = useState<{ cents: number; note: string }>({ cents: 0, note: '' });
   const wide = tab === 'home';
 
-  // Deep link from the PWA home-screen shortcut: /?action=add opens Quick add.
+  const openQuickAdd = (init?: { cents: number; note: string }) => {
+    setCaptureInit(init ?? { cents: 0, note: '' });
+    setCaptureOpen(true);
+  };
+
+  // Launch hooks: PWA shortcut (/?action=add) and the Web Share Target
+  // (/?shared_text=…&shared_title=…) — parse a shared payment and pre-fill capture.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('action') === 'add') {
-      setCaptureOpen(true);
-      window.history.replaceState({}, '', window.location.pathname);
+    const p = new URLSearchParams(window.location.search);
+    const action = p.get('action');
+    const text = p.get('shared_text');
+    const title = p.get('shared_title');
+    if (action === 'add') {
+      openQuickAdd();
+    } else if (text || title) {
+      const parsed = parsePaymentText(text ?? '', title ?? undefined);
+      openQuickAdd({ cents: parsed.amountSen ?? 0, note: parsed.note ?? '' });
+    } else {
+      return;
     }
+    window.history.replaceState({}, '', window.location.pathname);
   }, []);
+
+  // Auto-materialize recurring outflow events into the expense ledger.
+  useEffect(() => {
+    if (!data?.autoLogRecurring) return;
+    const today = todayISO();
+    const since = data.autoLogSince ?? today;
+    const start = addDaysISO(today, -14) > since ? addDaysISO(today, -14) : since;
+    const pend = pendingMaterializations(data.recurringEvents, data.materializedKeys, start, today);
+    if (data.autoLogSince && pend.length === 0) return; // already initialised, nothing new
+    update((d) => {
+      if (!d.autoLogSince) d.autoLogSince = today;
+      for (const m of pend) {
+        d.expenses.push({
+          id: newId(),
+          categoryId: '',
+          amountSen: m.amountSen,
+          dateISO: m.dateISO,
+          sourceEventId: m.eventId,
+          ...(m.name.trim() ? { note: m.name.trim() } : {}),
+        });
+        d.materializedKeys.push(m.key);
+      }
+    });
+  }, [data?.autoLogRecurring, data?.autoLogSince, data?.recurringEvents, data?.materializedKeys, update]);
 
   const screens: Record<TabId, ReactNode> = {
     home: (
@@ -74,7 +117,7 @@ export function AppShell() {
           </span>
         </div>
         <button
-          onClick={() => setCaptureOpen(true)}
+          onClick={() => openQuickAdd()}
           className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition hover:brightness-110 hover:-translate-y-px"
         >
           <span aria-hidden="true" className="text-lg leading-none">＋</span>
@@ -232,14 +275,20 @@ export function AppShell() {
 
       {/* Mobile floating Quick-add button */}
       <button
-        onClick={() => setCaptureOpen(true)}
+        onClick={() => openQuickAdd()}
         aria-label="Quick add expense"
         className="fixed bottom-[5.25rem] right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-3xl font-light text-primary-contrast shadow-lg ring-1 ring-gold/30 transition active:scale-90 lg:hidden"
       >
         <span aria-hidden="true" className="-mt-0.5 leading-none">＋</span>
       </button>
 
-      {captureOpen && <QuickCapture onClose={() => setCaptureOpen(false)} />}
+      {captureOpen && (
+        <QuickCapture
+          onClose={() => setCaptureOpen(false)}
+          initialCents={captureInit.cents}
+          initialNote={captureInit.note}
+        />
+      )}
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
     </div>
   );

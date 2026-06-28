@@ -31,7 +31,14 @@ export function Inbox() {
           <li key={e.id} className="rounded-xl border border-line p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="font-semibold tabular-nums text-ink">{formatSen(e.amountSen)}</p>
+                <p className="flex items-center gap-1.5 font-semibold tabular-nums text-ink">
+                  {formatSen(e.amountSen)}
+                  {e.sourceEventId && (
+                    <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gold">
+                      auto
+                    </span>
+                  )}
+                </p>
                 <p className="truncate text-xs text-ink-faint">
                   {e.note ? `${e.note} · ` : ''}
                   {e.dateISO}

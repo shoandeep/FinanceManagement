@@ -69,6 +69,8 @@ export interface Expense {
   /** ISO date (YYYY-MM-DD) the expense occurred. */
   dateISO: string;
   note?: string;
+  /** Set when auto-created from a recurring calendar event (provenance/badge). */
+  sourceEventId?: string;
 }
 
 /** Where idle (non-investment) cash rests: banks, e-wallets, fixed deposits. */
@@ -134,4 +136,10 @@ export interface AppData {
   advancedSave: boolean;
   /** Recurring money events for the calendar (subscriptions, income, BNPL, …). */
   recurringEvents: RecurringEvent[];
+  /** Auto-log recurring outflow events into the expense ledger on their date. */
+  autoLogRecurring: boolean;
+  /** ISO date auto-logging was first enabled (no occurrences before it are backfilled). */
+  autoLogSince?: string;
+  /** Keys (`eventId:dateISO`) already auto-materialized — prevents duplicates. */
+  materializedKeys: string[];
 }

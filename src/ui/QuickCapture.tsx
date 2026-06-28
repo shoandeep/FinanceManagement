@@ -15,11 +15,19 @@ const MAX_SEN = 99_999_999; // RM999,999.99 cap
  * UNSORTED capture (no category) so the fastest path is amount → Save → done; it
  * lands in the Inbox to file later. Works for guest (in-memory) and account.
  */
-export function QuickCapture({ onClose }: { onClose: () => void }) {
+export function QuickCapture({
+  onClose,
+  initialCents = 0,
+  initialNote = '',
+}: {
+  onClose: () => void;
+  initialCents?: number;
+  initialNote?: string;
+}) {
   const { data, update } = useVault();
-  const [cents, setCents] = useState<Sen>(0);
+  const [cents, setCents] = useState<Sen>(initialCents);
   const [categoryId, setCategoryId] = useState<string>(''); // '' = unsorted
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState(initialNote);
   const [savedFlash, setSavedFlash] = useState(false);
 
   useEffect(() => {

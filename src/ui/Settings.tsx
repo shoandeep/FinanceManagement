@@ -10,6 +10,7 @@ export function Settings({ onClose }: { onClose: () => void }) {
   const {
     data,
     session,
+    update,
     changePassphrase,
     shred,
     biometricCapable,
@@ -144,6 +145,34 @@ export function Settings({ onClose }: { onClose: () => void }) {
               <Button onClick={() => exportExpensesCsv(data, f)}>Expenses</Button>
               <Button onClick={() => exportCashflowCsv(data, f)}>Cashflow</Button>
             </div>
+          </div>
+        </section>
+
+        {/* Automatic logging */}
+        <section className="space-y-2 border-t border-line pt-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-ink">Auto-log recurring events</h3>
+              <p className="mt-0.5 text-xs text-ink-faint">
+                Subscriptions, BNPL, card dues &amp; bills from your calendar log themselves on their
+                date (into your Inbox to file). Income, savings &amp; investments stay reminders only.
+              </p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={data.autoLogRecurring}
+              aria-label="Auto-log recurring events"
+              onClick={() => update((d) => void (d.autoLogRecurring = !d.autoLogRecurring))}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                data.autoLogRecurring ? 'bg-primary' : 'bg-surface-2 ring-1 ring-inset ring-line'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  data.autoLogRecurring ? 'translate-x-[1.4rem]' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
           </div>
         </section>
 

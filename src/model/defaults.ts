@@ -38,6 +38,8 @@ export function createDefaultAppData(): AppData {
     cashAccounts: [],
     advancedSave: false,
     recurringEvents: [],
+    autoLogRecurring: true,
+    materializedKeys: [],
   };
 }
 
