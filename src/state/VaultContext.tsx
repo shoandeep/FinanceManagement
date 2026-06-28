@@ -15,8 +15,13 @@ import {
   saveAppData,
   changePassphrase as vaultChangePassphrase,
   shredAll,
+  hasBiometric,
+  enableBiometric as vaultEnableBiometric,
+  unlockWithBiometric,
+  disableBiometric as vaultDisableBiometric,
   WrongPassphraseError,
 } from '../db/vault';
+import { platformAuthenticatorAvailable } from '../db/webauthn';
 import { createDefaultAppData } from '../model/defaults';
 import type { AppData } from '../model/types';
 
@@ -47,6 +52,16 @@ interface VaultContextValue {
   initialize: (passphrase: string) => Promise<void>;
   /** Account: unlock an existing encrypted vault. */
   unlock: (passphrase: string) => Promise<void>;
+  /** Device supports a platform (Face ID / fingerprint) authenticator. */
+  biometricCapable: boolean;
+  /** Biometric unlock has been set up for this vault. */
+  biometricEnabled: boolean;
+  /** Account: unlock via a biometric ceremony (Face ID / fingerprint). */
+  unlockBiometric: () => Promise<void>;
+  /** Account: set up biometric unlock (requires the current passphrase). */
+  enableBiometricUnlock: (passphrase: string) => Promise<void>;
+  /** Account: turn off biometric unlock. */
+  disableBiometricUnlock: () => Promise<void>;
   /** Apply a mutation to the data; persists only for an account session. */
   update: (mutator: (draft: AppData) => void) => void;
   /** Account: change the passphrase while unlocked. Throws on failure. */
@@ -65,6 +80,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AppData | null>(null);
   const [autoLockMinutes] = useState(DEFAULT_AUTO_LOCK_MINUTES);
+  const [biometricCapable, setBiometricCapable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   // The unlocked key lives only in memory (a ref), never in React state/storage.
   const keyRef = useRef<CryptoKey | null>(null);
@@ -79,6 +96,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       setInitialized(init);
       setView('landing');
     });
+    void platformAuthenticatorAvailable().then((ok) => active && setBiometricCapable(ok));
+    void hasBiometric().then((ok) => active && setBiometricEnabled(ok));
     return () => {
       active = false;
     };
@@ -151,6 +170,38 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const unlockBiometric = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const key = await unlockWithBiometric();
+      let loaded = await loadAppData(key);
+      if (!loaded) {
+        loaded = createDefaultAppData();
+        await saveAppData(key, loaded);
+      }
+      keyRef.current = key;
+      setData(loaded);
+      setSession('account');
+      setView('app');
+    } catch (e) {
+      if (e instanceof WrongPassphraseError) setError('Saved credentials are out of date — use your passphrase.');
+      else setError('Biometric unlock was cancelled or unavailable.');
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  const enableBiometricUnlock = useCallback(async (passphrase: string) => {
+    await vaultEnableBiometric(passphrase);
+    setBiometricEnabled(true);
+  }, []);
+
+  const disableBiometricUnlock = useCallback(async () => {
+    await vaultDisableBiometric();
+    setBiometricEnabled(false);
+  }, []);
+
   const update = useCallback((mutator: (draft: AppData) => void) => {
     setData((current) => {
       if (!current) return current;
@@ -210,6 +261,11 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     exit,
     initialize,
     unlock,
+    biometricCapable,
+    biometricEnabled,
+    unlockBiometric,
+    enableBiometricUnlock,
+    disableBiometricUnlock,
     update,
     changePassphrase,
     shred,

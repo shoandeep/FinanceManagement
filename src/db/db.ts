@@ -1,5 +1,6 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import type { CipherRecord } from './crypto';
+import type { BiometricMeta } from './webauthn';
 
 export const DB_NAME = 'finance-guru';
 const DB_VERSION = 1;
@@ -15,7 +16,7 @@ export interface KdfMeta {
 }
 
 interface Schema {
-  [META_STORE]: { kdf: KdfMeta; verifier: CipherRecord };
+  [META_STORE]: { kdf: KdfMeta; verifier: CipherRecord; biometric: BiometricMeta };
   [VAULT_STORE]: { appdata: CipherRecord };
 }
 
@@ -44,6 +45,10 @@ export async function metaPut<K extends keyof Schema[typeof META_STORE]>(
   value: Schema[typeof META_STORE][K],
 ): Promise<void> {
   await (await getDb()).put(META_STORE, value, key as string);
+}
+
+export async function metaDelete(key: keyof Schema[typeof META_STORE]): Promise<void> {
+  await (await getDb()).delete(META_STORE, key as string);
 }
 
 export async function vaultGet(): Promise<CipherRecord | undefined> {

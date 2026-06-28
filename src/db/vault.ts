@@ -17,7 +17,13 @@ import {
   base64ToBytes,
   PBKDF2_ITERATIONS,
 } from './crypto';
-import { metaGet, metaPut, vaultGet, vaultPut, closeDb, DB_NAME } from './db';
+import { metaGet, metaPut, metaDelete, vaultGet, vaultPut, closeDb, DB_NAME } from './db';
+import {
+  registerBiometric,
+  getBiometricSecret,
+  wrapPassphrase,
+  unwrapPassphrase,
+} from './webauthn';
 import { SCHEMA_VERSION, type AppData } from '../model/types';
 import { normalizeAppData } from '../model/defaults';
 
@@ -140,6 +146,45 @@ export async function changePassphrase(
   await metaPut('verifier', await encryptString(newKey, VERIFIER_PLAINTEXT));
   if (data) await saveAppData(newKey, data);
   return newKey;
+}
+
+export class BiometricUnsupportedError extends Error {
+  constructor() {
+    super('Biometric unlock is not available on this device.');
+    this.name = 'BiometricUnsupportedError';
+  }
+}
+
+/** Whether biometric unlock has been set up for this vault. */
+export async function hasBiometric(): Promise<boolean> {
+  return (await metaGet('biometric')) !== undefined;
+}
+
+/**
+ * Enable biometric unlock: verify the passphrase, register a platform passkey
+ * (PRF), and store the passphrase wrapped under the PRF-derived key. Requires the
+ * current passphrase (biometrics is additive — the passphrase stays the root).
+ */
+export async function enableBiometric(passphrase: string): Promise<void> {
+  await unlockVault(passphrase); // throws WrongPassphraseError if incorrect
+  const reg = await registerBiometric();
+  if (!reg) throw new BiometricUnsupportedError();
+  const wrapped = await wrapPassphrase(reg.prfBytes, passphrase);
+  await metaPut('biometric', { credentialId: reg.credentialId, wrapped });
+}
+
+/** Unlock using a biometric ceremony. Falls through to the normal passphrase unlock. */
+export async function unlockWithBiometric(): Promise<CryptoKey> {
+  const bio = await metaGet('biometric');
+  if (!bio) throw new BiometricUnsupportedError();
+  const prfBytes = await getBiometricSecret(bio.credentialId);
+  const passphrase = await unwrapPassphrase(prfBytes, bio.wrapped);
+  return unlockVault(passphrase);
+}
+
+/** Turn off biometric unlock (passphrase still works). */
+export async function disableBiometric(): Promise<void> {
+  await metaDelete('biometric');
 }
 
 /** Permanently delete ALL stored data (the whole encrypted database). */

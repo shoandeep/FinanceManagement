@@ -6,7 +6,17 @@ import { useVault } from '../state/VaultContext';
  * (create a passphrase) and subsequent unlocks.
  */
 export function LockScreen() {
-  const { initialized, busy, error, initialize, unlock, backToLanding, data } = useVault();
+  const {
+    initialized,
+    busy,
+    error,
+    initialize,
+    unlock,
+    backToLanding,
+    data,
+    biometricEnabled,
+    unlockBiometric,
+  } = useVault();
   const pwId = useId();
   const confirmId = useId();
   const [passphrase, setPassphrase] = useState('');
@@ -66,7 +76,28 @@ export function LockScreen() {
           </p>
         )}
 
-        <div className="mt-5">
+        {!creating && biometricEnabled && (
+          <>
+            <button
+              type="button"
+              onClick={() => void unlockBiometric()}
+              disabled={busy}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <path d="M12 11c-1.1 0-2 .9-2 2v1m0 3v.5M7.5 4.7a8 8 0 0 1 9 0M5 8a10.5 10.5 0 0 1 14 0M8.5 11.2a5 5 0 0 1 7 0M12 14v3.5" />
+              </svg>
+              Unlock with Face ID / fingerprint
+            </button>
+            <div className="my-4 flex items-center gap-3 text-[11px] text-ink-faint">
+              <span className="h-px flex-1 bg-line" />
+              or use your passphrase
+              <span className="h-px flex-1 bg-line" />
+            </div>
+          </>
+        )}
+
+        <div className={creating || !biometricEnabled ? 'mt-5' : ''}>
           <label htmlFor={pwId} className="block text-sm font-medium text-ink-soft">
             Passphrase
           </label>
@@ -74,7 +105,7 @@ export function LockScreen() {
             id={pwId}
             type="password"
             autoComplete={creating ? 'new-password' : 'current-password'}
-            autoFocus
+            autoFocus={creating || !biometricEnabled}
             value={passphrase}
             onChange={(e) => setPassphrase(e.target.value)}
             className={inputCls}

@@ -7,13 +7,26 @@ import { downloadReport, printReport } from '../export/report';
 import { Button, TextInput } from './components';
 
 export function Settings({ onClose }: { onClose: () => void }) {
-  const { data, session, changePassphrase, shred } = useVault();
+  const {
+    data,
+    session,
+    changePassphrase,
+    shred,
+    biometricCapable,
+    biometricEnabled,
+    enableBiometricUnlock,
+    disableBiometricUnlock,
+  } = useVault();
   const newId = useId();
   const confirmId = useId();
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pwBusy, setPwBusy] = useState(false);
+  const [bioPass, setBioPass] = useState('');
+  const [bioMsg, setBioMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [bioBusy, setBioBusy] = useState(false);
+  const [bioOpen, setBioOpen] = useState(false);
   const [shredOpen, setShredOpen] = useState(false);
   const [shredText, setShredText] = useState('');
   const [printMsg, setPrintMsg] = useState<string | null>(null);
@@ -52,6 +65,35 @@ export function Settings({ onClose }: { onClose: () => void }) {
     } finally {
       setPwBusy(false);
     }
+  }
+
+  async function onEnableBio() {
+    setBioMsg(null);
+    if (!bioPass) return setBioMsg({ ok: false, text: 'Enter your current passphrase.' });
+    setBioBusy(true);
+    try {
+      await enableBiometricUnlock(bioPass);
+      setBioPass('');
+      setBioOpen(false);
+      setBioMsg({ ok: true, text: 'Biometric unlock is on for this device.' });
+    } catch (e) {
+      const name = e instanceof Error ? e.name : '';
+      const text =
+        name === 'WrongPassphraseError'
+          ? 'Incorrect passphrase.'
+          : name === 'BiometricUnsupportedError'
+            ? "This device's passkey doesn't support secure unlock (PRF)."
+            : 'Setup was cancelled or unavailable.';
+      setBioMsg({ ok: false, text });
+    } finally {
+      setBioBusy(false);
+    }
+  }
+
+  async function onDisableBio() {
+    setBioMsg(null);
+    await disableBiometricUnlock();
+    setBioMsg({ ok: true, text: 'Biometric unlock turned off.' });
   }
 
   return (
@@ -107,6 +149,51 @@ export function Settings({ onClose }: { onClose: () => void }) {
 
         {isAccount ? (
           <>
+            {/* Biometric unlock */}
+            {biometricCapable && (
+              <section className="space-y-2 border-t border-line pt-5">
+                <h3 className="text-sm font-semibold text-ink">Unlock with Face ID / fingerprint</h3>
+                <p className="text-xs text-ink-faint">
+                  Skip typing your passphrase on this device. It stays encrypted — your fingerprint or
+                  face just unlocks it. Your passphrase still works and is needed to set this up.
+                </p>
+                {biometricEnabled ? (
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-positive/30 bg-positive/5 px-3 py-2">
+                    <span className="text-xs font-medium text-positive">✓ On for this device</span>
+                    <Button onClick={() => void onDisableBio()} className="px-3 py-1.5 text-xs">
+                      Turn off
+                    </Button>
+                  </div>
+                ) : !bioOpen ? (
+                  <Button variant="primary" className="w-full" onClick={() => { setBioMsg(null); setBioOpen(true); }}>
+                    Set up biometric unlock
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <TextInput
+                      type="password"
+                      autoComplete="current-password"
+                      placeholder="Current passphrase"
+                      aria-label="Current passphrase"
+                      value={bioPass}
+                      onChange={(e) => setBioPass(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                      <Button className="flex-1" onClick={() => { setBioOpen(false); setBioPass(''); }}>
+                        Cancel
+                      </Button>
+                      <Button variant="primary" className="flex-1" disabled={bioBusy} onClick={() => void onEnableBio()}>
+                        {bioBusy ? 'Confirm on device…' : 'Continue'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {bioMsg && (
+                  <p className={`text-xs ${bioMsg.ok ? 'text-positive' : 'text-negative'}`}>{bioMsg.text}</p>
+                )}
+              </section>
+            )}
+
             {/* Account & data */}
             <section className="space-y-2 border-t border-line pt-5">
               <h3 className="text-sm font-semibold text-ink">Change passphrase</h3>
