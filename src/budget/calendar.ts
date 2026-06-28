@@ -4,7 +4,29 @@
  */
 import { addSen, type Sen } from '../money/money';
 import { addDaysISO, daysInMonth, dayOfWeekMon0, parseISO } from './dates';
-import type { EventType, RecurringEvent } from '../model/types';
+import type { EventType, FixedCost, RecurringEvent } from '../model/types';
+
+/** Synthetic-id prefix marking a calendar event derived from a fixed cost. */
+export const FIXED_PREFIX = 'fixed:';
+export const isFixedCostEvent = (id: string) => id.startsWith(FIXED_PREFIX);
+
+/**
+ * Project fixed monthly costs (that have a day set) onto the calendar as monthly
+ * 'bill' events, so the calendar shows the whole month's outgoings in one place.
+ * These are display-only here — they're still managed (and budgeted) as fixed costs.
+ */
+export function fixedCostsAsEvents(fixedCosts: FixedCost[]): RecurringEvent[] {
+  return fixedCosts
+    .filter((c) => c.dayOfMonth != null && c.amountSen > 0)
+    .map((c) => ({
+      id: `${FIXED_PREFIX}${c.id}`,
+      name: c.name,
+      type: 'bill' as EventType,
+      amountSen: c.amountSen,
+      freq: 'monthly' as const,
+      dayOfMonth: c.dayOfMonth!,
+    }));
+}
 
 const pad = (n: number) => String(n).padStart(2, '0');
 export const isoOf = (year: number, month: number, day: number) => `${year}-${pad(month)}-${pad(day)}`;

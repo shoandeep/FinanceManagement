@@ -21,6 +21,8 @@ export interface FixedCost {
   id: string;
   name: string;
   amountSen: number;
+  /** Day of month (1-31) the cost is due — set to show it on the calendar. */
+  dayOfMonth?: number;
 }
 
 /** What the allocation percentages apply to. */

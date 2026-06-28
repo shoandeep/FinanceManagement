@@ -192,14 +192,21 @@ export function MoneyInput({
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'id'>) {
   const autoId = useId();
   const inputId = id ?? autoId;
-  const [text, setText] = useState(() => formatSen(valueSen, { symbol: false }));
+  // Empty (not "0.00") when zero, so the placeholder shows and typing starts fresh.
+  const fmt = (sen: Sen) => (sen ? formatSen(sen, { symbol: false }) : '');
+  const [text, setText] = useState(() => fmt(valueSen));
   const [invalid, setInvalid] = useState(false);
+  const [focused, setFocused] = useState(false);
 
-  // Sync when the underlying value changes externally (e.g., reset / load).
+  // Sync from props only when NOT being edited — otherwise the user's own
+  // keystrokes get reformatted mid-typing (e.g. "5" -> "5.00") and the caret jumps.
   useEffect(() => {
-    setText(formatSen(valueSen, { symbol: false }));
-    setInvalid(false);
-  }, [valueSen]);
+    if (!focused) {
+      setText(fmt(valueSen));
+      setInvalid(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valueSen, focused]);
 
   return (
     <div className="relative">
@@ -210,8 +217,10 @@ export function MoneyInput({
         {...rest}
         id={inputId}
         inputMode="decimal"
+        placeholder="0.00"
         aria-invalid={invalid}
         value={text}
+        onFocus={() => setFocused(true)}
         onChange={(e) => {
           const raw = e.target.value;
           setText(raw);
@@ -233,7 +242,8 @@ export function MoneyInput({
           }
         }}
         onBlur={() => {
-          if (!invalid) setText(formatSen(valueSen, { symbol: false }));
+          setFocused(false);
+          if (!invalid) setText(fmt(valueSen));
         }}
         className={`${inputCls} pl-9 text-right tabular-nums ${invalid ? 'border-negative focus:border-negative focus:ring-negative/30' : ''}`}
       />

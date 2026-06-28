@@ -16,6 +16,8 @@ import {
   eventDirection,
   dayNet,
   projectBalances,
+  fixedCostsAsEvents,
+  isFixedCostEvent,
 } from '../../budget/calendar';
 import { eventEmoji, brandEmoji } from '../../budget/brand';
 import { cashSummary } from '../../budget/cash';
@@ -113,7 +115,10 @@ export function CalendarScreen() {
   const [selectedISO, setSelectedISO] = useState(todayISO());
   if (!data) return null;
 
-  const events = data.recurringEvents ?? [];
+  const recurring = data.recurringEvents ?? [];
+  // Display + forecast include fixed monthly costs (managed in Budget) so the
+  // calendar shows every outgoing in one place.
+  const events = [...recurring, ...fixedCostsAsEvents(data.fixedCosts)];
   const today = todayISO();
   const { year, month } = parseISO(focus);
 
@@ -351,7 +356,7 @@ export function CalendarScreen() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-ink">{e.name || meta.label}</p>
-                    <p className="text-xs text-ink-faint">{meta.label}</p>
+                    <p className="text-xs text-ink-faint">{isFixedCostEvent(e.id) ? 'Fixed cost' : meta.label}</p>
                   </div>
                   <span className={`shrink-0 tabular-nums font-semibold ${inn ? 'text-positive' : 'text-ink'}`}>
                     {inn ? '+' : '−'}
@@ -397,7 +402,7 @@ export function CalendarScreen() {
                       <li key={e.id} className="flex items-center gap-2 text-sm">
                         <span className="shrink-0 text-base leading-none">{eventEmoji(e)}</span>
                         <span className="truncate text-ink">{e.name || meta.label}</span>
-                        <span className="shrink-0 text-[10px] text-ink-faint">{meta.label}</span>
+                        <span className="shrink-0 text-[10px] text-ink-faint">{isFixedCostEvent(e.id) ? 'Fixed' : meta.label}</span>
                         <span className={`ml-auto shrink-0 tabular-nums font-semibold ${inn ? 'text-positive' : 'text-ink'}`}>
                           {inn ? '+' : '−'}
                           {formatSen(e.amountSen)}
@@ -436,7 +441,7 @@ export function CalendarScreen() {
           </Button>
         }
       >
-        {events.length === 0 ? (
+        {recurring.length === 0 ? (
           <p className="text-sm text-ink-faint">
             Add subscriptions, your paycheck, savings/investment auto-deposits, BNPL instalments and
             card due dates to see them on the calendar. Names like “Netflix”, “Maxis” or “Rent” pick up
@@ -444,7 +449,7 @@ export function CalendarScreen() {
           </p>
         ) : (
           <ul className="space-y-3">
-            {events.map((ev) => {
+            {recurring.map((ev) => {
               const patch = (fn: (a: RecurringEvent) => void) =>
                 update((d) => {
                   const it = d.recurringEvents.find((x) => x.id === ev.id);
@@ -566,7 +571,8 @@ export function CalendarScreen() {
         )}
         <p className="mt-3 text-[11px] text-ink-faint">
           Leave the emoji box blank to auto-detect from the name. Calendar items are reminders — they
-          don't move money. Tracking only.
+          don't move money. Tracking only. Fixed monthly costs with a due day (set in{' '}
+          <span className="font-semibold text-gold">Budget</span>) also show here.
         </p>
       </Card>
     </div>

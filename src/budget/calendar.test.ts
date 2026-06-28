@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { occursOn, monthList, summarize, dayNet, projectBalances } from './calendar';
-import type { RecurringEvent } from '../model/types';
+import { occursOn, monthList, summarize, dayNet, projectBalances, fixedCostsAsEvents, isFixedCostEvent } from './calendar';
+import type { FixedCost, RecurringEvent } from '../model/types';
 
 const ev = (p: Partial<RecurringEvent>): RecurringEvent => ({
   id: 'x',
@@ -70,6 +70,20 @@ describe('month list + summary', () => {
     expect(dayNet(events, '2026-06-05')).toBe(-17_500); // Netflix + Atome
     expect(dayNet(events, '2026-06-25')).toBe(650_000); // Salary
     expect(dayNet(events, '2026-06-10')).toBe(0); // nothing
+  });
+
+  it('surfaces fixed costs (with a due day) as monthly bill events', () => {
+    const fixed: FixedCost[] = [
+      { id: 'rent', name: 'Rent', amountSen: 120_000, dayOfMonth: 1 },
+      { id: 'unifi', name: 'Unifi', amountSen: 13_900, dayOfMonth: 15 },
+      { id: 'nodate', name: 'Misc', amountSen: 5_000 }, // no day → not shown
+      { id: 'zero', name: 'Zero', amountSen: 0, dayOfMonth: 5 }, // zero → not shown
+    ];
+    const evs = fixedCostsAsEvents(fixed);
+    expect(evs.map((e) => e.name)).toEqual(['Rent', 'Unifi']);
+    expect(evs.every((e) => e.type === 'bill' && e.freq === 'monthly')).toBe(true);
+    expect(isFixedCostEvent(evs[0].id)).toBe(true);
+    expect(occursOn(evs[1], '2026-06-15')).toBe(true);
   });
 
   it('projects a forward running balance', () => {

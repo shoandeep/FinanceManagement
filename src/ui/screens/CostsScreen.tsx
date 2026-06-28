@@ -69,43 +69,67 @@ export function CostsScreen() {
             No fixed costs yet — add rent, utilities, phone, internet, subscriptions, PTPTN, loans…
           </p>
         ) : (
-          <ul className="space-y-2">
-            {data.fixedCosts.map((c) => (
-              <li key={c.id} className="grid grid-cols-[1fr_8rem_auto] items-center gap-2">
-                <TextInput
-                  aria-label="Cost name"
-                  placeholder="Name"
-                  value={c.name}
-                  onChange={(e) =>
-                    update((d) => {
-                      const item = d.fixedCosts.find((x) => x.id === c.id);
-                      if (item) item.name = e.target.value;
-                    })
-                  }
-                />
-                <MoneyInput
-                  valueSen={c.amountSen}
-                  onChangeSen={(sen) =>
-                    update((d) => {
-                      const item = d.fixedCosts.find((x) => x.id === c.id);
-                      if (item) item.amountSen = sen;
-                    })
-                  }
-                />
-                <Button
-                  variant="danger"
-                  className="px-2"
-                  aria-label={`Remove ${c.name || 'cost'}`}
-                  onClick={() =>
-                    update((d) => {
-                      d.fixedCosts = d.fixedCosts.filter((x) => x.id !== c.id);
-                    })
-                  }
-                >
-                  ✕
-                </Button>
-              </li>
-            ))}
+          <ul className="space-y-3">
+            {data.fixedCosts.map((c) => {
+              const patch = (fn: (item: typeof c) => void) =>
+                update((d) => {
+                  const item = d.fixedCosts.find((x) => x.id === c.id);
+                  if (item) fn(item);
+                });
+              return (
+                <li key={c.id} className="rounded-xl border border-line p-3">
+                  <div className="flex items-center gap-2">
+                    <TextInput
+                      aria-label="Cost name"
+                      placeholder="e.g. Rent, Unifi, PTPTN"
+                      value={c.name}
+                      onChange={(e) => patch((item) => (item.name = e.target.value))}
+                    />
+                    <Button
+                      variant="danger"
+                      className="px-2"
+                      aria-label={`Remove ${c.name || 'cost'}`}
+                      onClick={() =>
+                        update((d) => void (d.fixedCosts = d.fixedCosts.filter((x) => x.id !== c.id)))
+                      }
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <label className="text-xs text-ink-faint">
+                      Amount / month
+                      <div className="mt-1">
+                        <MoneyInput
+                          valueSen={c.amountSen}
+                          onChangeSen={(sen) => patch((item) => (item.amountSen = sen))}
+                        />
+                      </div>
+                    </label>
+                    <label className="text-xs text-ink-faint">
+                      Due day (calendar)
+                      <input
+                        type="number"
+                        min={1}
+                        max={31}
+                        inputMode="numeric"
+                        value={c.dayOfMonth ?? ''}
+                        placeholder="—"
+                        aria-label="Due day of month"
+                        onChange={(e) =>
+                          patch((item) => {
+                            const v = e.target.value;
+                            if (v === '') delete item.dayOfMonth;
+                            else item.dayOfMonth = Math.max(1, Math.min(31, Number(v) || 1));
+                          })
+                        }
+                        className="mt-1 w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm tabular-nums text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
+                      />
+                    </label>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
         <div className="mt-3 flex justify-between border-t border-line pt-3 text-sm">
