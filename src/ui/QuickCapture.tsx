@@ -17,14 +17,13 @@ const MODES: { id: Mode; label: string }[] = [
   { id: 'save', label: 'Save' },
   { id: 'invest', label: 'Invest' },
 ];
-const EMERGENCY = 'emergency'; // sentinel target id for the emergency fund
 
 /**
  * Frictionless capture: amount first (a POS-style cents pad), then one tap to
  * file it. "Spend" logs an expense (unsorted by default → Inbox). "Save" and
- * "Invest" log a manual transfer that raises the chosen tracker's balance, with
- * an optional "from" account — so money you move by hand is reflected without
- * shuffling pages. Works for guest (in-memory) and account.
+ * "Invest" log a manual transfer (e.g. paycheck → a bank/e-wallet or an
+ * investment) that raises that account's balance — so money you move by hand is
+ * reflected without shuffling pages. Works for guest (in-memory) and account.
  */
 export function QuickCapture({
   onClose,
@@ -39,8 +38,7 @@ export function QuickCapture({
   const [mode, setMode] = useState<Mode>('spend');
   const [cents, setCents] = useState<Sen>(initialCents);
   const [categoryId, setCategoryId] = useState<string>(''); // '' = unsorted
-  const [targetId, setTargetId] = useState<string>(EMERGENCY); // save/invest target
-  const [accountId, setAccountId] = useState<string>(''); // optional "from" account
+  const [targetId, setTargetId] = useState<string>(''); // save/invest target account
   const [note, setNote] = useState(initialNote);
   const [savedFlash, setSavedFlash] = useState(false);
 
@@ -59,18 +57,16 @@ export function QuickCapture({
   if (!data) return null;
   const cats = data.variableCategories;
   const merchants = recentMerchants(data.expenses, 6);
-  const goals = data.goals.filter((g) => g.name.trim());
   const investments = data.investments.filter((i) => i.name.trim());
   const accounts = (data.cashAccounts ?? []).filter((a) => a.name.trim());
 
-  // Targets for the active mode.
-  const saveTargets = [{ id: EMERGENCY, name: 'Emergency fund' }, ...goals];
-  const targets = mode === 'invest' ? investments : mode === 'save' ? saveTargets : [];
+  // Targets for the active mode: cash accounts (Save) or investments (Invest).
+  const targets = mode === 'save' ? accounts : mode === 'invest' ? investments : [];
   const targetValid = mode === 'spend' || targets.some((t) => t.id === targetId);
 
   function switchMode(m: Mode) {
     setMode(m);
-    if (m === 'save') setTargetId(EMERGENCY);
+    if (m === 'save') setTargetId(accounts[0]?.id ?? '');
     else if (m === 'invest') setTargetId(investments[0]?.id ?? '');
   }
 
@@ -96,14 +92,13 @@ export function QuickCapture({
         });
         return;
       }
-      const kind: TransferKind = mode === 'invest' ? 'investment' : targetId === EMERGENCY ? 'emergency' : 'savings';
+      const kind: TransferKind = mode === 'save' ? 'cash' : 'investment';
       const t: Transfer = {
         id: newId(),
         kind,
-        targetId: targetId === EMERGENCY ? '' : targetId,
+        targetId,
         amountSen: cents,
         dateISO: todayISO(),
-        ...(accountId ? { accountId } : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       };
       d.transfers.push(t);
@@ -121,9 +116,9 @@ export function QuickCapture({
   }
   const save = () => commit(true);
 
-  const targetLabel = mode === 'invest' ? 'Into investment' : 'Into';
+  const targetLabel = mode === 'invest' ? 'Into investment' : 'Into account';
   const flashText =
-    mode === 'spend' ? '✓ Saved — add another' : mode === 'invest' ? '✓ Logged to investment' : '✓ Logged to savings';
+    mode === 'spend' ? '✓ Saved — add another' : mode === 'invest' ? '✓ Added to investment' : '✓ Added to account';
 
   return (
     <div
@@ -190,7 +185,7 @@ export function QuickCapture({
             <p className="mb-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-ink-soft">
               {mode === 'invest'
                 ? 'Add an investment in Save → Investments first, then log transfers here.'
-                : 'Add a savings goal in Save first (or use the Emergency fund).'}
+                : 'Add your bank / e-wallet accounts in Save → Advanced first, then log transfers here.'}
             </p>
           ) : (
             <>
@@ -202,21 +197,6 @@ export function QuickCapture({
                   </Chip>
                 ))}
               </div>
-              {accounts.length > 0 && (
-                <>
-                  <Label>From (optional)</Label>
-                  <div className="mb-2 flex flex-wrap gap-1.5">
-                    <Chip active={accountId === ''} onClick={() => setAccountId('')}>
-                      —
-                    </Chip>
-                    {accounts.map((a) => (
-                      <Chip key={a.id} active={accountId === a.id} onClick={() => setAccountId(a.id)}>
-                        {a.name}
-                      </Chip>
-                    ))}
-                  </div>
-                </>
-              )}
             </>
           ))}
 
@@ -268,7 +248,7 @@ export function QuickCapture({
         <p className="mt-2 text-center text-[11px] text-ink-faint">
           {mode === 'spend'
             ? 'No category? It waits in your Inbox to file later.'
-            : 'Raises the tracker and saves an editable entry in Save.'}
+            : 'Raises that account’s balance and saves an editable entry in Save.'}
         </p>
       </div>
     </div>

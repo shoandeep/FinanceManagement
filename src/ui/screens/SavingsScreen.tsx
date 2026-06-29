@@ -23,7 +23,6 @@ function TransferLog({ kind, targetId }: { kind: TransferKind; targetId: string 
   if (!data) return null;
   const items = transfersFor(data.transfers, kind, targetId);
   if (items.length === 0) return null;
-  const accounts = data.cashAccounts ?? [];
 
   const patch = (id: string, fn: (t: (typeof items)[number]) => void) =>
     update((d) => {
@@ -54,7 +53,6 @@ function TransferLog({ kind, targetId }: { kind: TransferKind; targetId: string 
       <ul className="space-y-1">
         {items.map((t) => {
           const open = openId === t.id;
-          const acc = accounts.find((a) => a.id === t.accountId);
           return (
             <li key={t.id} className="rounded-lg bg-surface-2/50">
               <button
@@ -63,7 +61,7 @@ function TransferLog({ kind, targetId }: { kind: TransferKind; targetId: string 
                 className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs"
               >
                 <span className="text-ink-faint">{shortDate(t.dateISO)}</span>
-                {acc && <span className="truncate text-ink-faint">· {acc.name}</span>}
+                {t.note && <span className="truncate text-ink-faint">· {t.note}</span>}
                 <span className="ml-auto shrink-0 font-semibold tabular-nums text-positive">+{formatSen(t.amountSen)}</span>
                 <span aria-hidden className="shrink-0 text-ink-faint">{open ? '▾' : '▸'}</span>
               </button>
@@ -87,29 +85,6 @@ function TransferLog({ kind, targetId }: { kind: TransferKind; targetId: string 
                       />
                     </label>
                   </div>
-                  {accounts.length > 0 && (
-                    <label className="block text-[11px] text-ink-faint">
-                      From account
-                      <Select
-                        className="mt-1"
-                        aria-label="From account"
-                        value={t.accountId ?? ''}
-                        onChange={(e) =>
-                          patch(t.id, (x) => {
-                            if (e.target.value) x.accountId = e.target.value;
-                            else delete x.accountId;
-                          })
-                        }
-                      >
-                        <option value="">—</option>
-                        {accounts.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.name}
-                          </option>
-                        ))}
-                      </Select>
-                    </label>
-                  )}
                   <label className="block text-[11px] text-ink-faint">
                     Note
                     <TextInput
@@ -260,7 +235,12 @@ function CashSavings({ today }: { today: string }) {
                       variant="danger"
                       className="px-2"
                       aria-label={`Remove ${acc.name || 'account'}`}
-                      onClick={() => update((d) => void (d.cashAccounts = d.cashAccounts.filter((x) => x.id !== acc.id)))}
+                      onClick={() =>
+                        update((d) => {
+                          d.cashAccounts = d.cashAccounts.filter((x) => x.id !== acc.id);
+                          d.transfers = d.transfers.filter((x) => !(x.kind === 'cash' && x.targetId === acc.id));
+                        })
+                      }
                     >
                       ✕
                     </Button>
@@ -323,6 +303,7 @@ function CashSavings({ today }: { today: string }) {
                       Reverts to base {s.baseRatePercent.toFixed(2)}% after the promo ends.
                     </p>
                   )}
+                  <TransferLog kind="cash" targetId={acc.id} />
                 </li>
               );
             })}
@@ -412,7 +393,6 @@ export function SavingsScreen() {
             here first.
           </p>
         )}
-        <TransferLog kind="emergency" targetId="" />
       </Card>
 
       <Card
@@ -454,10 +434,7 @@ export function SavingsScreen() {
                       className="px-2"
                       aria-label={`Remove ${g.name || 'goal'}`}
                       onClick={() =>
-                        update((d) => {
-                          d.goals = d.goals.filter((x) => x.id !== g.id);
-                          d.transfers = d.transfers.filter((x) => !(x.kind === 'savings' && x.targetId === g.id));
-                        })
+                        update((d) => void (d.goals = d.goals.filter((x) => x.id !== g.id)))
                       }
                     >
                       ✕
@@ -521,7 +498,6 @@ export function SavingsScreen() {
                       )}
                     </p>
                   </div>
-                  <TransferLog kind="savings" targetId={g.id} />
                 </li>
               );
             })}

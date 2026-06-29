@@ -110,23 +110,22 @@ export interface Investment {
 }
 
 /** Which tracker a logged transfer feeds. */
-export type TransferKind = 'savings' | 'investment' | 'emergency';
+export type TransferKind = 'cash' | 'investment';
 
 /**
- * A logged manual money movement into a tracker — e.g. "transferred RM500 to
- * ASB". Increments the target's balance; kept as editable history so the user
- * can see and correct what they've moved without re-typing running totals.
+ * A logged manual money movement into one of your accounts — e.g. "moved RM500
+ * from my paycheck into RYT Bank" (cash) or "into ASB" (investment). Increments
+ * the target account's balance; kept as editable history so you can see and
+ * correct what you've moved without re-typing running totals.
  */
 export interface Transfer {
   id: string;
   kind: TransferKind;
-  /** Goal id (savings) / Investment id (investment); '' for the emergency fund. */
+  /** Cash account id (cash) or Investment id (investment) the money landed in. */
   targetId: string;
   amountSen: number;
   /** ISO date (YYYY-MM-DD) the transfer was made. */
   dateISO: string;
-  /** Optional cash account (bank/e-wallet) it came from — label / context only. */
-  accountId?: string;
   note?: string;
 }
 

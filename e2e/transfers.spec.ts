@@ -1,31 +1,33 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Quick-add "Invest" logs a manual transfer that raises the investment tracker
- * and leaves an editable history entry — without leaving the capture pad.
+ * Quick-add "Save" logs a manual transfer (e.g. paycheck → a bank/e-wallet)
+ * that raises that cash account's balance and leaves an editable history entry
+ * under it — without leaving the capture pad.
  */
-test('quick-add Invest raises the tracker and logs an editable entry', async ({ page }) => {
+test('quick-add Save raises a cash account and logs an editable entry', async ({ page }) => {
   test.setTimeout(60_000);
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Try it now — no signup' }).click();
   const mobileNav = page.locator('nav[aria-label="Sections"]');
 
-  // Save → add an investment named ASB.
+  // Save → Advanced → add a cash account named RYT Bank.
   await mobileNav.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.getByRole('button', { name: '+ Add' }).nth(1).click(); // Investments card
-  await page.getByLabel('Investment name').fill('ASB');
+  await page.getByRole('switch', { name: 'Toggle advanced cash tracking' }).click();
+  await page.getByRole('button', { name: '+ Add' }).first().click(); // "Where your cash rests"
+  await page.getByLabel('Account name').fill('RYT Bank');
 
-  // Quick-add (FAB) → Invest → RM500 → Save.
+  // Quick-add (FAB) → Save → RYT Bank auto-selected → RM500 → Save.
   await page.getByRole('button', { name: 'Quick add expense' }).click();
   const dlg = page.getByRole('dialog', { name: 'Quick add' });
-  await dlg.getByRole('button', { name: 'Invest', exact: true }).click();
-  await expect(dlg.getByRole('button', { name: 'ASB' })).toHaveAttribute('aria-pressed', 'true');
+  await dlg.getByRole('button', { name: 'Save', exact: true }).first().click(); // the mode chip
+  await expect(dlg.getByRole('button', { name: 'RYT Bank' })).toHaveAttribute('aria-pressed', 'true');
   for (const k of ['5', '0', '0', '0', '0']) await dlg.getByRole('button', { name: k, exact: true }).click();
   await expect(dlg.getByText('RM500.00')).toBeVisible();
-  await dlg.getByRole('button', { name: 'Save', exact: true }).last().click(); // primary, not the mode chip
+  await dlg.getByRole('button', { name: 'Save', exact: true }).last().click(); // primary action
 
-  // The tracker reflects it and a transfer is logged.
+  // The cash account reflects it and a transfer is logged under it.
   await expect(page.getByText('Transfers (1)')).toBeVisible();
   await expect(page.locator('input[value="500.00"]').first()).toBeVisible();
 
