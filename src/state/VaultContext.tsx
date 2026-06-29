@@ -33,11 +33,31 @@ export type Session = 'guest' | 'account';
 /** Auto-lock an account session after this many minutes of inactivity. */
 export const DEFAULT_AUTO_LOCK_MINUTES = 5;
 
+/**
+ * Whether the app is running as an installed PWA (added to the home screen),
+ * rather than in a browser tab. Installed + a saved vault skips the landing and
+ * goes straight to unlock; the landing is for first-run, web tabs and logout.
+ */
+function detectStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  const mm = window.matchMedia;
+  const byDisplayMode =
+    !!mm &&
+    (mm('(display-mode: standalone)').matches ||
+      mm('(display-mode: fullscreen)').matches ||
+      mm('(display-mode: minimal-ui)').matches);
+  const iosStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+  return byDisplayMode || iosStandalone;
+}
+const INSTALLED = detectStandalone();
+
 interface VaultContextValue {
   view: AppView;
   session: Session | null;
   /** True if a saved (encrypted) vault already exists on this device. */
   initialized: boolean;
+  /** True when running as an installed PWA (home-screen app), not a browser tab. */
+  installed: boolean;
   busy: boolean;
   error: string | null;
   data: AppData | null;
@@ -56,8 +76,9 @@ interface VaultContextValue {
   biometricCapable: boolean;
   /** Biometric unlock has been set up for this vault. */
   biometricEnabled: boolean;
-  /** Account: unlock via a biometric ceremony (Face ID / fingerprint). */
-  unlockBiometric: () => Promise<void>;
+  /** Account: unlock via a biometric ceremony (Face ID / fingerprint). Pass
+   *  { silent: true } for an auto-attempt that won't surface an error if blocked. */
+  unlockBiometric: (opts?: { silent?: boolean }) => Promise<void>;
   /** Account: set up biometric unlock (requires the current passphrase). */
   enableBiometricUnlock: (passphrase: string) => Promise<void>;
   /** Account: turn off biometric unlock. */
@@ -88,13 +109,18 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   // Keep the latest data available to initialize() without stale closures.
   const dataRef = useRef<AppData | null>(null);
   dataRef.current = data;
+  // Latest `initialized` for callbacks created once (exit).
+  const initializedRef = useRef(initialized);
+  initializedRef.current = initialized;
 
   useEffect(() => {
     let active = true;
     vaultIsInitialized().then((init) => {
       if (!active) return;
       setInitialized(init);
-      setView('landing');
+      // Installed app + an existing vault → straight to unlock (saves a screen);
+      // otherwise the landing (first run, browser tab, post-logout).
+      setView(INSTALLED && init ? 'auth' : 'landing');
     });
     void platformAuthenticatorAvailable().then((ok) => active && setBiometricCapable(ok));
     void hasBiometric().then((ok) => active && setBiometricEnabled(ok));
@@ -103,12 +129,15 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Lock/leave the session. On an installed app with a saved vault we drop to the
+  // unlock screen (quick re-entry); in a browser tab (or with no vault) we return
+  // to the landing page.
   const exit = useCallback(() => {
     keyRef.current = null;
     setData(null);
     setSession(null);
     setError(null);
-    setView('landing');
+    setView(INSTALLED && initializedRef.current ? 'auth' : 'landing');
   }, []);
 
   const goToAuth = useCallback(() => {
@@ -170,9 +199,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const unlockBiometric = useCallback(async () => {
+  const unlockBiometric = useCallback(async (opts?: { silent?: boolean }) => {
     setBusy(true);
-    setError(null);
+    if (!opts?.silent) setError(null);
     try {
       const key = await unlockWithBiometric();
       let loaded = await loadAppData(key);
@@ -185,8 +214,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       setSession('account');
       setView('app');
     } catch (e) {
-      if (e instanceof WrongPassphraseError) setError('Saved credentials are out of date — use your passphrase.');
-      else setError('Biometric unlock was cancelled or unavailable.');
+      // A silent auto-attempt (e.g. on launch) may be blocked without a user
+      // gesture — leave the screen untouched so the manual button still works.
+      if (!opts?.silent) {
+        if (e instanceof WrongPassphraseError) setError('Saved credentials are out of date — use your passphrase.');
+        else setError('Biometric unlock was cancelled or unavailable.');
+      }
     } finally {
       setBusy(false);
     }
@@ -251,6 +284,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     view,
     session,
     initialized,
+    installed: INSTALLED,
     busy,
     error,
     data,

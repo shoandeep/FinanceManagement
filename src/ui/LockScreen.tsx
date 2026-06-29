@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { useVault } from '../state/VaultContext';
 
 /**
@@ -14,6 +14,7 @@ export function LockScreen() {
     unlock,
     backToLanding,
     data,
+    installed,
     biometricEnabled,
     unlockBiometric,
   } = useVault();
@@ -24,6 +25,16 @@ export function LockScreen() {
   const [localError, setLocalError] = useState<string | null>(null);
 
   const creating = !initialized;
+
+  // Installed app + biometrics set up → prompt Face ID / fingerprint straight
+  // away (once), so unlocking is one tap. Silent if the platform blocks the
+  // auto-attempt (needs a gesture) — the button below still works.
+  const autoTried = useRef(false);
+  useEffect(() => {
+    if (autoTried.current || !installed || creating || !biometricEnabled) return;
+    autoTried.current = true;
+    void unlockBiometric({ silent: true });
+  }, [installed, creating, biometricEnabled, unlockBiometric]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
