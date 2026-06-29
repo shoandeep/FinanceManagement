@@ -61,9 +61,13 @@ export function Stat({
   tone?: Tone;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-[0.7rem] font-medium uppercase tracking-[0.08em] text-ink-faint">{label}</p>
-      <p className={`mt-1 text-xl font-bold tabular-nums tracking-tight ${toneText[tone]}`}>{value}</p>
+      <p
+        className={`mt-1 text-base font-bold leading-tight tracking-tight tabular-nums [overflow-wrap:anywhere] sm:text-lg ${toneText[tone]}`}
+      >
+        {value}
+      </p>
       {sub && <p className="mt-0.5 text-xs text-ink-faint">{sub}</p>}
     </div>
   );
