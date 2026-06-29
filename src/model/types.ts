@@ -109,6 +109,27 @@ export interface Investment {
   currentSen: number;
 }
 
+/** Which tracker a logged transfer feeds. */
+export type TransferKind = 'savings' | 'investment' | 'emergency';
+
+/**
+ * A logged manual money movement into a tracker — e.g. "transferred RM500 to
+ * ASB". Increments the target's balance; kept as editable history so the user
+ * can see and correct what they've moved without re-typing running totals.
+ */
+export interface Transfer {
+  id: string;
+  kind: TransferKind;
+  /** Goal id (savings) / Investment id (investment); '' for the emergency fund. */
+  targetId: string;
+  amountSen: number;
+  /** ISO date (YYYY-MM-DD) the transfer was made. */
+  dateISO: string;
+  /** Optional cash account (bank/e-wallet) it came from — label / context only. */
+  accountId?: string;
+  note?: string;
+}
+
 export interface VariableCategory {
   id: string;
   name: string;
@@ -200,4 +221,6 @@ export interface AppData {
   payPeriod: PayPeriodConfig;
   /** Light personal profile (state/region, employer) — localises weekends & holidays. */
   profile?: Profile;
+  /** Logged manual transfers into savings/investment/emergency trackers. */
+  transfers: Transfer[];
 }

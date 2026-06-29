@@ -1,11 +1,146 @@
+import { useState } from 'react';
 import { useVault } from '../../state/VaultContext';
 import { deriveFinances } from '../../state/selectors';
 import { todayISO } from '../../budget/dates';
 import { newId } from '../../model/defaults';
+import { transfersFor, applyTransferEffect } from '../../budget/transfers';
 import { formatSen } from '../../money/money';
 import { cashSummary } from '../../budget/cash';
-import type { CashAccountType } from '../../model/types';
+import type { CashAccountType, TransferKind } from '../../model/types';
 import { Card, Money, MoneyInput, TextInput, Select, Button, ProgressBar, Stat, Disclaimer, Toggle } from '../components';
+
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
+
+/**
+ * Compact, collapsible history of logged transfers into a tracker. Each row
+ * shows date + amount; expand to see/edit the note & source account, or delete.
+ * Edits delta-adjust the tracker balance; delete reverses the transfer.
+ */
+function TransferLog({ kind, targetId }: { kind: TransferKind; targetId: string }) {
+  const { data, update } = useVault();
+  const [openId, setOpenId] = useState<string | null>(null);
+  if (!data) return null;
+  const items = transfersFor(data.transfers, kind, targetId);
+  if (items.length === 0) return null;
+  const accounts = data.cashAccounts ?? [];
+
+  const patch = (id: string, fn: (t: (typeof items)[number]) => void) =>
+    update((d) => {
+      const t = d.transfers.find((x) => x.id === id);
+      if (t) fn(t);
+    });
+  const setAmount = (id: string, sen: number) =>
+    update((d) => {
+      const t = d.transfers.find((x) => x.id === id);
+      if (!t) return;
+      applyTransferEffect(d, t, -1);
+      t.amountSen = sen;
+      applyTransferEffect(d, t, 1);
+    });
+  const remove = (id: string) =>
+    update((d) => {
+      const t = d.transfers.find((x) => x.id === id);
+      if (!t) return;
+      applyTransferEffect(d, t, -1);
+      d.transfers = d.transfers.filter((x) => x.id !== id);
+    });
+
+  return (
+    <div className="mt-3 border-t border-line pt-2">
+      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-faint">
+        Transfers ({items.length})
+      </p>
+      <ul className="space-y-1">
+        {items.map((t) => {
+          const open = openId === t.id;
+          const acc = accounts.find((a) => a.id === t.accountId);
+          return (
+            <li key={t.id} className="rounded-lg bg-surface-2/50">
+              <button
+                onClick={() => setOpenId(open ? null : t.id)}
+                aria-expanded={open}
+                className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs"
+              >
+                <span className="text-ink-faint">{shortDate(t.dateISO)}</span>
+                {acc && <span className="truncate text-ink-faint">· {acc.name}</span>}
+                <span className="ml-auto shrink-0 font-semibold tabular-nums text-positive">+{formatSen(t.amountSen)}</span>
+                <span aria-hidden className="shrink-0 text-ink-faint">{open ? '▾' : '▸'}</span>
+              </button>
+              {open && (
+                <div className="space-y-2 px-2 pb-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="text-[11px] text-ink-faint">
+                      Amount
+                      <div className="mt-1">
+                        <MoneyInput valueSen={t.amountSen} onChangeSen={(sen) => setAmount(t.id, sen)} />
+                      </div>
+                    </label>
+                    <label className="text-[11px] text-ink-faint">
+                      Date
+                      <input
+                        type="date"
+                        value={t.dateISO}
+                        aria-label="Transfer date"
+                        onChange={(e) => e.target.value && patch(t.id, (x) => void (x.dateISO = e.target.value))}
+                        className="mt-1 w-full rounded-lg border border-line bg-surface px-2 py-2 text-sm text-ink outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+                      />
+                    </label>
+                  </div>
+                  {accounts.length > 0 && (
+                    <label className="block text-[11px] text-ink-faint">
+                      From account
+                      <Select
+                        className="mt-1"
+                        aria-label="From account"
+                        value={t.accountId ?? ''}
+                        onChange={(e) =>
+                          patch(t.id, (x) => {
+                            if (e.target.value) x.accountId = e.target.value;
+                            else delete x.accountId;
+                          })
+                        }
+                      >
+                        <option value="">—</option>
+                        {accounts.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </label>
+                  )}
+                  <label className="block text-[11px] text-ink-faint">
+                    Note
+                    <TextInput
+                      className="mt-1"
+                      placeholder="Optional"
+                      value={t.note ?? ''}
+                      onChange={(e) =>
+                        patch(t.id, (x) => {
+                          if (e.target.value) x.note = e.target.value;
+                          else delete x.note;
+                        })
+                      }
+                    />
+                  </label>
+                  <Button
+                    variant="danger"
+                    className="px-2 py-1 text-xs"
+                    aria-label="Delete transfer"
+                    onClick={() => remove(t.id)}
+                  >
+                    Delete entry
+                  </Button>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 const ACCOUNT_TYPES: { id: CashAccountType; label: string }[] = [
   { id: 'bank', label: 'Bank' },
@@ -277,6 +412,7 @@ export function SavingsScreen() {
             here first.
           </p>
         )}
+        <TransferLog kind="emergency" targetId="" />
       </Card>
 
       <Card
@@ -318,7 +454,10 @@ export function SavingsScreen() {
                       className="px-2"
                       aria-label={`Remove ${g.name || 'goal'}`}
                       onClick={() =>
-                        update((d) => void (d.goals = d.goals.filter((x) => x.id !== g.id)))
+                        update((d) => {
+                          d.goals = d.goals.filter((x) => x.id !== g.id);
+                          d.transfers = d.transfers.filter((x) => !(x.kind === 'savings' && x.targetId === g.id));
+                        })
                       }
                     >
                       ✕
@@ -382,6 +521,7 @@ export function SavingsScreen() {
                       )}
                     </p>
                   </div>
+                  <TransferLog kind="savings" targetId={g.id} />
                 </li>
               );
             })}
@@ -406,39 +546,45 @@ export function SavingsScreen() {
             Track pots like ASB, EPF i-Invest, unit trusts, equities. Tracking only — not advice.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {data.investments.map((inv) => (
-              <li key={inv.id} className="grid grid-cols-[1fr_8rem_auto] items-center gap-2">
-                <TextInput
-                  aria-label="Investment name"
-                  placeholder="e.g. ASB"
-                  value={inv.name}
-                  onChange={(e) =>
-                    update((d) => {
-                      const item = d.investments.find((x) => x.id === inv.id);
-                      if (item) item.name = e.target.value;
-                    })
-                  }
-                />
-                <MoneyInput
-                  valueSen={inv.currentSen}
-                  onChangeSen={(sen) =>
-                    update((d) => {
-                      const item = d.investments.find((x) => x.id === inv.id);
-                      if (item) item.currentSen = sen;
-                    })
-                  }
-                />
-                <Button
-                  variant="danger"
-                  className="px-2"
-                  aria-label={`Remove ${inv.name || 'investment'}`}
-                  onClick={() =>
-                    update((d) => void (d.investments = d.investments.filter((x) => x.id !== inv.id)))
-                  }
-                >
-                  ✕
-                </Button>
+              <li key={inv.id}>
+                <div className="grid grid-cols-[1fr_8rem_auto] items-center gap-2">
+                  <TextInput
+                    aria-label="Investment name"
+                    placeholder="e.g. ASB"
+                    value={inv.name}
+                    onChange={(e) =>
+                      update((d) => {
+                        const item = d.investments.find((x) => x.id === inv.id);
+                        if (item) item.name = e.target.value;
+                      })
+                    }
+                  />
+                  <MoneyInput
+                    valueSen={inv.currentSen}
+                    onChangeSen={(sen) =>
+                      update((d) => {
+                        const item = d.investments.find((x) => x.id === inv.id);
+                        if (item) item.currentSen = sen;
+                      })
+                    }
+                  />
+                  <Button
+                    variant="danger"
+                    className="px-2"
+                    aria-label={`Remove ${inv.name || 'investment'}`}
+                    onClick={() =>
+                      update((d) => {
+                        d.investments = d.investments.filter((x) => x.id !== inv.id);
+                        d.transfers = d.transfers.filter((x) => !(x.kind === 'investment' && x.targetId === inv.id));
+                      })
+                    }
+                  >
+                    ✕
+                  </Button>
+                </div>
+                <TransferLog kind="investment" targetId={inv.id} />
               </li>
             ))}
           </ul>
