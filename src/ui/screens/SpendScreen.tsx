@@ -7,6 +7,7 @@ import { formatSen, type Sen } from '../../money/money';
 import type { SpendPeriod } from '../../budget/spendingPlan';
 import { Card, Money, MoneyInput, TextInput, Select, Button, Stat, ProgressBar, Disclaimer } from '../components';
 import { CategoryDonut, DailyBars } from '../charts';
+import { Transactions } from '../Transactions';
 
 const shortDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
@@ -53,6 +54,7 @@ export function SpendScreen() {
   const [categoryId, setCategoryId] = useState<string>('');
   const [date, setDate] = useState<string>(today);
   const [note, setNote] = useState('');
+  const [txnsOpen, setTxnsOpen] = useState(false);
 
   if (!data) return null;
   const f = deriveFinances(data, today);
@@ -225,7 +227,14 @@ export function SpendScreen() {
         </Button>
       </Card>
 
-      <Card title={`This month's expenses (${monthExpenses.length})`}>
+      <Card
+        title={`This month's expenses (${monthExpenses.length})`}
+        action={
+          <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => setTxnsOpen(true)}>
+            View all
+          </Button>
+        }
+      >
         {monthExpenses.length === 0 ? (
           <p className="text-sm text-ink-faint">Nothing logged this month.</p>
         ) : (
@@ -324,6 +333,8 @@ export function SpendScreen() {
         Average shows an even split of your monthly budget (it won’t spike late in the month). “On
         pace” distributes whatever budget is left over the days remaining.
       </Disclaimer>
+
+      {txnsOpen && <Transactions onClose={() => setTxnsOpen(false)} />}
     </div>
   );
 }
