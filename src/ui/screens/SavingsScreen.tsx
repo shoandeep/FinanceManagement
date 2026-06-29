@@ -5,7 +5,7 @@ import { newId } from '../../model/defaults';
 import { formatSen } from '../../money/money';
 import { cashSummary } from '../../budget/cash';
 import type { CashAccountType } from '../../model/types';
-import { Card, Money, MoneyInput, TextInput, Select, Button, ProgressBar, Stat, Disclaimer } from '../components';
+import { Card, Money, MoneyInput, TextInput, Select, Button, ProgressBar, Stat, Disclaimer, Toggle } from '../components';
 
 const ACCOUNT_TYPES: { id: CashAccountType; label: string }[] = [
   { id: 'bank', label: 'Bank' },
@@ -217,22 +217,11 @@ export function SavingsScreen() {
             Track where idle cash rests (banks, e-wallets, fixed deposits) and its potential earnings.
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={data.advancedSave}
-          aria-label="Toggle advanced cash tracking"
-          onClick={() => update((d) => void (d.advancedSave = !d.advancedSave))}
-          className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-            data.advancedSave ? 'bg-primary' : 'bg-surface-2 ring-1 ring-inset ring-line'
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-              data.advancedSave ? 'translate-x-[22px]' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+        <Toggle
+          checked={data.advancedSave}
+          onChange={(next) => update((d) => void (d.advancedSave = next))}
+          label="Toggle advanced cash tracking"
+        />
       </div>
 
       {data.advancedSave && <CashSavings today={today} />}

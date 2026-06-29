@@ -132,6 +132,38 @@ export function Button({
   );
 }
 
+/* --------------------------------------------------------------- Toggle */
+/** Accessible on/off switch. The knob is anchored at left-0 and slides via
+ *  translate-x so it always stays inside the 44px track (never overhangs). */
+export function Toggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${
+        checked ? 'bg-primary' : 'bg-surface-2 ring-1 ring-inset ring-line'
+      }`}
+    >
+      <span
+        className={`absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+          checked ? 'translate-x-[22px]' : 'translate-x-0.5'
+        }`}
+      />
+    </button>
+  );
+}
+
 /* ---------------------------------------------------------------- Field */
 export function Field({
   label,
