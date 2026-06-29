@@ -175,6 +175,59 @@ const HOLIDAYS: Record<string, HolidayEntry[]> = {
   '2027-12-25': [nat('Christmas Day')],
 };
 
+/**
+ * State ruler / Governor birthdays + Good Friday (Sabah & Sarawak), merged into
+ * the table above. Fixed-date birthdays repeat each year; the "Nth weekday"
+ * birthdays (Kedah = 3rd Sunday of June, Perak = 1st Friday of November) and
+ * Good Friday are listed per year. Per the respective state gazette.
+ */
+const STATE_EXTRA: [string, HolidayEntry][] = [
+  // Johor — Sultan of Johor's Birthday (23 Mar)
+  ['2025-03-23', only("Sultan of Johor's Birthday", ['johor'])],
+  ['2026-03-23', only("Sultan of Johor's Birthday", ['johor'])],
+  ['2027-03-23', only("Sultan of Johor's Birthday", ['johor'])],
+  // Kedah — Sultan of Kedah's Birthday (3rd Sunday of June)
+  ['2025-06-15', only("Sultan of Kedah's Birthday", ['kedah'])],
+  ['2026-06-21', only("Sultan of Kedah's Birthday", ['kedah'])],
+  ['2027-06-20', only("Sultan of Kedah's Birthday", ['kedah'])],
+  // Kelantan — Sultan of Kelantan's Birthday (11–12 Nov, two days)
+  ['2025-11-11', only("Sultan of Kelantan's Birthday", ['kelantan'])],
+  ['2025-11-12', only("Sultan of Kelantan's Birthday (2nd day)", ['kelantan'])],
+  ['2026-11-11', only("Sultan of Kelantan's Birthday", ['kelantan'])],
+  ['2026-11-12', only("Sultan of Kelantan's Birthday (2nd day)", ['kelantan'])],
+  ['2027-11-11', only("Sultan of Kelantan's Birthday", ['kelantan'])],
+  ['2027-11-12', only("Sultan of Kelantan's Birthday (2nd day)", ['kelantan'])],
+  // Negeri Sembilan — Yang di-Pertuan Besar's Birthday (14 Jan)
+  ['2025-01-14', only("Yang di-Pertuan Besar's Birthday", ['negeri-sembilan'])],
+  ['2026-01-14', only("Yang di-Pertuan Besar's Birthday", ['negeri-sembilan'])],
+  ['2027-01-14', only("Yang di-Pertuan Besar's Birthday", ['negeri-sembilan'])],
+  // Pahang — Sultan of Pahang's Birthday (30 Jul)
+  ['2025-07-30', only("Sultan of Pahang's Birthday", ['pahang'])],
+  ['2026-07-30', only("Sultan of Pahang's Birthday", ['pahang'])],
+  ['2027-07-30', only("Sultan of Pahang's Birthday", ['pahang'])],
+  // Perak — Sultan of Perak's Birthday (1st Friday of November)
+  ['2025-11-07', only("Sultan of Perak's Birthday", ['perak'])],
+  ['2026-11-06', only("Sultan of Perak's Birthday", ['perak'])],
+  ['2027-11-05', only("Sultan of Perak's Birthday", ['perak'])],
+  // Perlis — Raja of Perlis's Birthday (17 Jul)
+  ['2025-07-17', only("Raja of Perlis's Birthday", ['perlis'])],
+  ['2026-07-17', only("Raja of Perlis's Birthday", ['perlis'])],
+  ['2027-07-17', only("Raja of Perlis's Birthday", ['perlis'])],
+  // Selangor — Sultan of Selangor's Birthday (11 Dec)
+  ['2025-12-11', only("Sultan of Selangor's Birthday", ['selangor'])],
+  ['2026-12-11', only("Sultan of Selangor's Birthday", ['selangor'])],
+  ['2027-12-11', only("Sultan of Selangor's Birthday", ['selangor'])],
+  // Terengganu — Sultan of Terengganu's Birthday (26 Apr)
+  ['2025-04-26', only("Sultan of Terengganu's Birthday", ['terengganu'])],
+  ['2026-04-26', only("Sultan of Terengganu's Birthday", ['terengganu'])],
+  ['2027-04-26', only("Sultan of Terengganu's Birthday", ['terengganu'])],
+  // Good Friday — Sabah & Sarawak only
+  ['2025-04-18', only('Good Friday', ['sabah', 'sarawak'])],
+  ['2026-04-03', only('Good Friday', ['sabah', 'sarawak'])],
+  ['2027-03-26', only('Good Friday', ['sabah', 'sarawak'])],
+];
+for (const [d, e] of STATE_EXTRA) (HOLIDAYS[d] ??= []).push(e);
+
 export interface ResolvedHoliday {
   name: string;
   /** True for a nationwide holiday, false for a state-specific one. */

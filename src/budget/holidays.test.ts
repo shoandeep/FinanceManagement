@@ -42,6 +42,19 @@ describe('holidaysOn', () => {
     expect(holidaysOn('2026-01-01', 'johor')).toEqual([]); // no New Year in Johor
     expect(holidaysOn('2026-01-01', 'selangor').map((h) => h.name)).toEqual(["New Year's Day"]);
   });
+  it('includes state ruler/Governor birthdays (state-only)', () => {
+    const johor = holidaysOn('2026-03-23', 'johor');
+    expect(johor).toEqual([{ name: "Sultan of Johor's Birthday", national: false }]);
+    expect(holidaysOn('2026-03-23', 'selangor')).toEqual([]); // not elsewhere
+    expect(holidaysOn('2026-06-21', 'kedah')[0].name).toBe("Sultan of Kedah's Birthday"); // 3rd Sun June
+    expect(holidaysOn('2026-11-06', 'perak')[0].name).toBe("Sultan of Perak's Birthday"); // 1st Fri Nov
+    expect(holidaysOn('2026-12-11', 'selangor')[0].name).toBe("Sultan of Selangor's Birthday");
+  });
+  it('includes Good Friday for Sabah & Sarawak only', () => {
+    expect(holidaysOn('2026-04-03', 'sarawak')[0].name).toBe('Good Friday');
+    expect(holidaysOn('2026-04-03', 'sabah')[0].name).toBe('Good Friday');
+    expect(holidaysOn('2026-04-03', 'johor')).toEqual([]);
+  });
 });
 
 describe('isPublicHoliday / isNonWorkingDay', () => {
