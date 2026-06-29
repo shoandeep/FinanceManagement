@@ -19,6 +19,7 @@ export function Dashboard({
   const f = deriveFinances(data, todayISO());
 
   const leftTodayNegative = f.spending.day.leftSen < 0;
+  const isCycle = (data.payPeriod?.mode ?? 'calendarMonth') !== 'calendarMonth';
 
   return (
     <div className="space-y-4 lg:columns-2 lg:gap-4 lg:space-y-0">
@@ -94,7 +95,7 @@ export function Dashboard({
           />
         </div>
         <div className="mt-3 flex justify-between text-xs text-ink-faint">
-          <span>Month to date</span>
+          <span>{isCycle ? 'Cycle' : 'Month'} to date</span>
           <span className={f.spending.overspent ? 'text-negative' : ''}>
             {formatSen(f.spending.spentMonthSen)} / {formatSen(f.spending.monthlyBudgetSen)}
           </span>

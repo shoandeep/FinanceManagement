@@ -15,8 +15,11 @@ import {
   type GoalStatus,
 } from '../budget/budget';
 import { computeSpendingPlan, type SpendingPlan } from '../budget/spendingPlan';
-import type { AppData } from '../model/types';
+import { currentPayPeriod, type PayPeriod } from '../budget/payperiod';
+import type { AppData, PayPeriodConfig } from '../model/types';
 import type { Sen } from '../money/money';
+
+const DEFAULT_PAY_PERIOD: PayPeriodConfig = { mode: 'calendarMonth', dayOfMonth: 25, customDates: {} };
 
 export interface Finances {
   todayISO: string;
@@ -28,6 +31,7 @@ export interface Finances {
   goals: GoalStatus[];
   investmentsTotalSen: Sen;
   spending: SpendingPlan;
+  payPeriod: PayPeriod;
 }
 
 export function deriveFinances(data: AppData, todayISO: string): Finances {
@@ -50,11 +54,13 @@ export function deriveFinances(data: AppData, todayISO: string): Finances {
     allocation.variableSen,
     allocation.savingsSen,
   );
+  const payPeriod = currentPayPeriod(data.payPeriod ?? DEFAULT_PAY_PERIOD, todayISO);
   const spending = computeSpendingPlan(
     allocation.variableSen,
     data.variableCategories,
     data.expenses,
     todayISO,
+    { startISO: payPeriod.startISO, endISO: payPeriod.endISO },
   );
 
   return {
@@ -67,5 +73,6 @@ export function deriveFinances(data: AppData, todayISO: string): Finances {
     goals: data.goals.map((g) => goalStatus(g, todayISO)),
     investmentsTotalSen: investmentsTotalSen(data.investments),
     spending,
+    payPeriod,
   };
 }

@@ -1,24 +1,27 @@
 import { useState } from 'react';
 import { useVault } from '../../state/VaultContext';
 import { deriveFinances } from '../../state/selectors';
-import { todayISO } from '../../budget/dates';
+import { todayISO, parseISO, daysInMonth as daysInMonthOf, dayOfMonth, addDaysISO } from '../../budget/dates';
 import { newId } from '../../model/defaults';
 import { formatSen, type Sen } from '../../money/money';
 import type { SpendPeriod } from '../../budget/spendingPlan';
 import { Card, Money, MoneyInput, TextInput, Select, Button, Stat, ProgressBar, Disclaimer } from '../components';
 import { CategoryDonut, DailyBars } from '../charts';
 
-const PERIODS: { id: SpendPeriod; label: string }[] = [
-  { id: 'day', label: 'Daily' },
-  { id: 'week', label: 'Weekly' },
-  { id: 'month', label: 'Monthly' },
-];
-const NOUN: Record<SpendPeriod, string> = { day: 'today', week: 'this week', month: 'this month' };
-const UNIT: Record<SpendPeriod, string> = { day: 'day', week: 'week', month: 'month' };
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
 
 /** Segmented "slider" to switch period. */
-function PeriodSlider({ value, onChange }: { value: SpendPeriod; onChange: (p: SpendPeriod) => void }) {
-  const index = PERIODS.findIndex((p) => p.id === value);
+function PeriodSlider({
+  value,
+  onChange,
+  periods,
+}: {
+  value: SpendPeriod;
+  onChange: (p: SpendPeriod) => void;
+  periods: { id: SpendPeriod; label: string }[];
+}) {
+  const index = periods.findIndex((p) => p.id === value);
   return (
     <div className="relative grid grid-cols-3 rounded-xl bg-surface-2 p-1 ring-1 ring-inset ring-line">
       <div
@@ -26,7 +29,7 @@ function PeriodSlider({ value, onChange }: { value: SpendPeriod; onChange: (p: S
         style={{ transform: `translateX(${index * 100}%)` }}
         aria-hidden
       />
-      {PERIODS.map((p) => (
+      {periods.map((p) => (
         <button
           key={p.id}
           onClick={() => onChange(p.id)}
@@ -58,6 +61,22 @@ export function SpendScreen() {
   const cats = data.variableCategories;
   const activeCat = categoryId || cats[0]?.id || '';
 
+  // Pay-cycle vs calendar-month labelling.
+  const isCycle = (data.payPeriod?.mode ?? 'calendarMonth') !== 'calendarMonth';
+  const cycleWord = isCycle ? 'cycle' : 'month';
+  const PERIODS: { id: SpendPeriod; label: string }[] = [
+    { id: 'day', label: 'Daily' },
+    { id: 'week', label: 'Weekly' },
+    { id: 'month', label: isCycle ? 'Cycle' : 'Monthly' },
+  ];
+  const UNIT: Record<SpendPeriod, string> = { day: 'day', week: 'week', month: cycleWord };
+  const NOUN: Record<SpendPeriod, string> = {
+    day: 'today',
+    week: 'this week',
+    month: isCycle ? 'this cycle' : 'this month',
+  };
+  const periodRange = `${shortDate(plan.periodStartISO)} – ${shortDate(addDaysISO(plan.periodEndISO, -1))}`;
+
   const monthExpenses = data.expenses
     .filter((e) => e.dateISO.slice(0, 7) === today.slice(0, 7))
     .sort((a, b) => (a.dateISO < b.dateISO ? 1 : -1));
@@ -80,27 +99,36 @@ export function SpendScreen() {
 
   const shareSum = cats.reduce((s, c) => s + c.sharePercent, 0);
 
-  // Chart data.
+  // Chart data. The daily-bars chart is always a calendar-month view, independent
+  // of the (possibly cross-month) pay cycle, so compute its days locally.
+  const { year, month } = parseISO(today);
+  const calDays = daysInMonthOf(year, month);
+  const calToday = dayOfMonth(today);
   const donutItems = plan.categories.map((c) => ({ name: c.name, value: c.month.spentSen }));
-  const dayTotals: number[] = new Array(plan.daysInMonth).fill(0);
+  const dayTotals: number[] = new Array(calDays).fill(0);
   data.expenses
     .filter((e) => e.dateISO.slice(0, 7) === today.slice(0, 7))
     .forEach((e) => {
       const d = parseInt(e.dateISO.slice(8, 10), 10);
-      if (d >= 1 && d <= plan.daysInMonth) dayTotals[d - 1] += e.amountSen;
+      if (d >= 1 && d <= calDays) dayTotals[d - 1] += e.amountSen;
     });
-  const dailyDays = dayTotals.map((v, i) => ({ day: i + 1, value: v, today: i + 1 === plan.daysElapsed }));
+  const dailyDays = dayTotals.map((v, i) => ({ day: i + 1, value: v, today: i + 1 === calToday }));
   const hasSpend = plan.spentMonthSen > 0;
 
   return (
     <div className="space-y-4">
       <Card title="Spending plan">
-        <PeriodSlider value={period} onChange={setPeriod} />
+        <PeriodSlider value={period} onChange={setPeriod} periods={PERIODS} />
+        {isCycle && (
+          <p className="mt-2 text-center text-[11px] text-ink-faint">
+            Pay cycle · {periodRange} · {plan.daysInMonth} days
+          </p>
+        )}
         <div className="mt-4 grid grid-cols-2 gap-4">
           <Stat
             label={`Average per ${UNIT[period]}`}
             value={<Money sen={m.averageSen} />}
-            sub={`of ${formatSen(plan.monthlyBudgetSen)} / month`}
+            sub={`of ${formatSen(plan.monthlyBudgetSen)} / ${cycleWord}`}
           />
           <Stat
             label={`Left ${NOUN[period]}`}
@@ -116,7 +144,7 @@ export function SpendScreen() {
           {plan.daysRemaining} day{plan.daysRemaining === 1 ? '' : 's'} left).
         </div>
         <div className="mt-2 flex justify-between text-xs text-ink-faint">
-          <span>Month to date</span>
+          <span>{isCycle ? 'Cycle' : 'Month'} to date</span>
           <span className={plan.overspent ? 'text-negative' : ''}>
             {formatSen(plan.spentMonthSen)} / {formatSen(plan.monthlyBudgetSen)}
           </span>

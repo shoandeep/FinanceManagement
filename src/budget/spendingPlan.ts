@@ -12,15 +12,13 @@
  */
 import { addSen, roundHalfUp, type Sen } from '../money/money';
 import type { Expense, VariableCategory } from '../model/types';
-import {
-  daysInMonth as daysInMonthOf,
-  daysRemainingInMonth,
-  dayOfMonth,
-  firstOfMonthISO,
-  monthKeyOf,
-  parseISO,
-  startOfWeekISO,
-} from './dates';
+import { daysBetweenISO, firstOfMonthISO, monthKeyOf, parseISO, startOfWeekISO } from './dates';
+
+/** A budgeting period [startISO, endISO) — endISO is exclusive (next period's start). */
+export interface BudgetPeriod {
+  startISO: string;
+  endISO: string;
+}
 
 export type SpendPeriod = 'day' | 'week' | 'month';
 
@@ -42,13 +40,17 @@ export interface CategoryPlan {
 
 export interface SpendingPlan {
   monthKey: string;
+  /** Days in the active budgeting period (calendar month, or pay cycle). */
   daysInMonth: number;
   daysRemaining: number; // including today
-  daysElapsed: number; // day-of-month
-  monthlyBudgetSen: Sen;
-  spentMonthSen: Sen;
+  daysElapsed: number; // days into the period (incl. today)
+  monthlyBudgetSen: Sen; // budget for the whole period (one paycheck's variable allocation)
+  spentMonthSen: Sen; // spent within the period
   remainingMonthSen: Sen; // budget − spent (may be negative)
   overspent: boolean;
+  /** Period bounds — for labelling pay cycles that don't align to the month. */
+  periodStartISO: string;
+  periodEndISO: string;
   day: PeriodSpend;
   week: PeriodSpend;
   month: PeriodSpend;
@@ -56,7 +58,7 @@ export interface SpendingPlan {
 }
 
 interface Ctx {
-  daysInMonth: number;
+  daysInPeriod: number;
   daysRemaining: number;
 }
 
@@ -70,8 +72,8 @@ function periods(
   const remaining = budgetSen - spentMonthSen;
   const dr = Math.max(1, ctx.daysRemaining);
 
-  const avgDay = roundHalfUp(budgetSen / ctx.daysInMonth);
-  const avgWeek = roundHalfUp((budgetSen * 7) / ctx.daysInMonth);
+  const avgDay = roundHalfUp(budgetSen / ctx.daysInPeriod);
+  const avgWeek = roundHalfUp((budgetSen * 7) / ctx.daysInPeriod);
 
   const onPaceDay = roundHalfUp(remaining / dr);
   const onPaceWeek = roundHalfUp((remaining * Math.min(7, dr)) / dr);
@@ -100,21 +102,26 @@ export function computeSpendingPlan(
   categories: VariableCategory[],
   expenses: Expense[],
   todayISO: string,
+  period?: BudgetPeriod,
 ): SpendingPlan {
   const { year, month } = parseISO(todayISO);
-  const monthKey = monthKeyOf(todayISO);
+  // Default period is the calendar month (backward-compatible behaviour).
+  const startISO = period?.startISO ?? firstOfMonthISO(todayISO);
+  const endISO =
+    period?.endISO ?? (month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`);
+
   const ctx: Ctx = {
-    daysInMonth: daysInMonthOf(year, month),
-    daysRemaining: daysRemainingInMonth(todayISO),
+    daysInPeriod: Math.max(1, daysBetweenISO(startISO, endISO)),
+    daysRemaining: Math.max(1, daysBetweenISO(todayISO, endISO)),
   };
+  const monthKey = monthKeyOf(todayISO);
 
-  // "This week" is clamped to the current month so it stays consistent with the
-  // monthly budget it derives from.
-  const monthStart = firstOfMonthISO(todayISO);
+  // "This week" is clamped to the period start so it stays consistent with the
+  // period budget it derives from.
   const weekStartRaw = startOfWeekISO(todayISO);
-  const weekStart = weekStartRaw > monthStart ? weekStartRaw : monthStart;
+  const weekStart = weekStartRaw > startISO ? weekStartRaw : startISO;
 
-  const monthExpenses = expenses.filter((e) => monthKeyOf(e.dateISO) === monthKey);
+  const monthExpenses = expenses.filter((e) => e.dateISO >= startISO && e.dateISO < endISO);
   const inDay = (e: Expense) => e.dateISO === todayISO;
   const inWeek = (e: Expense) => e.dateISO >= weekStart && e.dateISO <= todayISO;
 
@@ -142,13 +149,15 @@ export function computeSpendingPlan(
   const spentMonthSen = totals.month.spentSen;
   return {
     monthKey,
-    daysInMonth: ctx.daysInMonth,
+    daysInMonth: ctx.daysInPeriod,
     daysRemaining: ctx.daysRemaining,
-    daysElapsed: dayOfMonth(todayISO),
+    daysElapsed: daysBetweenISO(startISO, todayISO) + 1,
     monthlyBudgetSen: variableBudgetSen,
     spentMonthSen,
     remainingMonthSen: variableBudgetSen - spentMonthSen,
     overspent: variableBudgetSen - spentMonthSen < 0,
+    periodStartISO: startISO,
+    periodEndISO: endISO,
     day: totals.day,
     week: totals.week,
     month: totals.month,

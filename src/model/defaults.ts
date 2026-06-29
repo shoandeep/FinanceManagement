@@ -40,6 +40,7 @@ export function createDefaultAppData(): AppData {
     recurringEvents: [],
     autoLogRecurring: true,
     materializedKeys: [],
+    payPeriod: { mode: 'calendarMonth', dayOfMonth: 25, customDates: {} },
   };
 }
 

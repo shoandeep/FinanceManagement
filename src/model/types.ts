@@ -35,6 +35,22 @@ export interface Allocation {
   variablePct: number;
 }
 
+/**
+ * How the budgeting period is defined.
+ *  - 'calendarMonth': 1st → end of month (the classic default).
+ *  - 'sameDay': payday is the same day-of-month every month (period = payday → next payday).
+ *  - 'custom': payday day-of-month, with per-month overrides for when pay actually lands.
+ */
+export type PayPeriodMode = 'calendarMonth' | 'sameDay' | 'custom';
+
+export interface PayPeriodConfig {
+  mode: PayPeriodMode;
+  /** Day of month payday normally falls on (1-31, clamped to month length). */
+  dayOfMonth: number;
+  /** Overrides for specific months: 'YYYY-MM' → actual payday ISO date 'YYYY-MM-DD'. */
+  customDates: Record<string, string>;
+}
+
 export interface EmergencyFund {
   /** Months of essential expenses to cover. */
   months: number;
@@ -144,4 +160,6 @@ export interface AppData {
   autoLogSince?: string;
   /** Keys (`eventId:dateISO`) already auto-materialized — prevents duplicates. */
   materializedKeys: string[];
+  /** How the budgeting period is defined (calendar month vs pay cycle). */
+  payPeriod: PayPeriodConfig;
 }

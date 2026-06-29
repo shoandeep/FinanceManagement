@@ -64,6 +64,14 @@ export function addDaysISO(dateISO: string, n: number): string {
   return `${y}-${m}-${dd}`;
 }
 
+/** Whole days from `aISO` to `bISO` (b − a). Negative if b is before a. UTC-safe. */
+export function daysBetweenISO(aISO: string, bISO: string): number {
+  const a = parseISO(aISO);
+  const b = parseISO(bISO);
+  const ms = Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day);
+  return Math.round(ms / 86_400_000);
+}
+
 /** Day of week with Monday = 0 … Sunday = 6. */
 export function dayOfWeekMon0(dateISO: string): number {
   const { year, month, day } = parseISO(dateISO);
