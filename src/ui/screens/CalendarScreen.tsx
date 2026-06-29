@@ -20,6 +20,8 @@ import {
   isFixedCostEvent,
 } from '../../budget/calendar';
 import { eventEmoji, brandEmoji } from '../../budget/brand';
+import { holidaysOn } from '../../budget/holidays';
+import { paydayForMonth } from '../../budget/payperiod';
 import { cashSummary } from '../../budget/cash';
 import { newId } from '../../model/defaults';
 import { formatSen, type Sen } from '../../money/money';
@@ -38,6 +40,8 @@ const EVENT_META: Record<EventType, { label: string; color: string }> = {
 const TYPE_ORDER: EventType[] = ['income', 'subscription', 'bill', 'savings', 'investment', 'bnpl', 'creditcard'];
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const HOLIDAY_COLOR = '#c0476a'; // festive crimson, distinct from the money chips
+const PAYDAY_COLOR = '#caa23a'; // gold
 
 /* --------------------------------------------------------------- helpers */
 function tint(hex: string, a: number): string {
@@ -150,6 +154,27 @@ export function CalendarScreen() {
       : cells.filter((c) => c.events.length).map((c) => ({ day: c.day, dateISO: c.dateISO, events: c.events }));
   const summary = summarize(list);
 
+  // State-aware public holidays + payday markers (non-money) for the visible period.
+  const state = data.profile?.state;
+  const payCfg = data.payPeriod ?? { mode: 'calendarMonth' as const, dayOfMonth: 25, customDates: {} };
+  const paydaySet = new Set<string>();
+  if (payCfg.mode !== 'calendarMonth') {
+    const monthKeys = new Set(cells.map((c) => c.dateISO.slice(0, 7)));
+    // A payday can shift earlier into view, so also scan the month after the last cell.
+    const lp = parseISO(cells[cells.length - 1].dateISO);
+    const nxt = new Date(Date.UTC(lp.year, lp.month, 1));
+    monthKeys.add(`${nxt.getUTCFullYear()}-${String(nxt.getUTCMonth() + 1).padStart(2, '0')}`);
+    for (const mk of monthKeys) {
+      const [y, m] = mk.split('-').map(Number);
+      paydaySet.add(paydayForMonth(payCfg, y, m, state));
+    }
+  }
+  // Holidays + paydays falling inside the visible period (in-month days only for month view).
+  const marks = cells
+    .filter((c) => view === 'week' || c.inMonth)
+    .map((c) => ({ dateISO: c.dateISO, hols: holidaysOn(c.dateISO, state), isPayday: paydaySet.has(c.dateISO) }))
+    .filter((m) => m.hols.length || m.isPayday);
+
   // Forward running-balance forecast, anchored on current cash (Save → balances).
   const anchorSen = cashSummary(data.cashAccounts ?? [], today).totalBalanceSen;
   const hasAnchor = anchorSen > 0;
@@ -198,6 +223,8 @@ export function CalendarScreen() {
   const selectedEvents = eventsOnDate(events, selectedISO);
   const selectedBal = forecast?.balances.get(selectedISO);
   const selectedNet = dayNet(events, selectedISO);
+  const selectedHols = holidaysOn(selectedISO, state);
+  const selectedIsPayday = paydaySet.has(selectedISO);
 
   return (
     <div className="space-y-4">
@@ -276,6 +303,8 @@ export function CalendarScreen() {
             const bal = forecast?.balances.get(c.dateISO);
             const isLow = forecast && c.dateISO === forecast.lowISO && c.dateISO >= today;
             const selected = c.dateISO === selectedISO;
+            const hols = holidaysOn(c.dateISO, state);
+            const isPayday = paydaySet.has(c.dateISO);
             const shown = c.events.slice(0, view === 'week' ? 5 : 3);
             return (
               <button
@@ -305,6 +334,26 @@ export function CalendarScreen() {
                   )}
                 </div>
                 <div className="mt-0.5 space-y-0.5">
+                  {isPayday && (
+                    <div
+                      className="flex items-center gap-1 rounded-md px-1 py-0.5 text-[9px] font-semibold leading-tight"
+                      style={{ background: tint(PAYDAY_COLOR, 0.2) }}
+                      title="Payday"
+                    >
+                      <span className="shrink-0">💰</span>
+                      <span className="min-w-0 flex-1 truncate text-ink">Payday</span>
+                    </div>
+                  )}
+                  {hols.length > 0 && (
+                    <div
+                      className="flex items-center gap-1 rounded-md px-1 py-0.5 text-[9px] leading-tight"
+                      style={{ background: tint(HOLIDAY_COLOR, 0.16) }}
+                      title={hols.map((h) => h.name).join(' · ')}
+                    >
+                      <span className="shrink-0">🎉</span>
+                      <span className="min-w-0 flex-1 truncate font-medium text-ink">{hols[0].name}</span>
+                    </div>
+                  )}
                   {shown.map((e) => (
                     <Chip key={e.id} ev={e} />
                   ))}
@@ -339,8 +388,33 @@ export function CalendarScreen() {
             <span className="font-semibold tabular-nums text-ink">{formatSen(selectedBal)}</span>
           </p>
         )}
+        {selectedIsPayday && (
+          <p
+            className="mb-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm"
+            style={{ background: tint(PAYDAY_COLOR, 0.18) }}
+          >
+            <span className="text-base leading-none">💰</span>
+            <span className="font-medium text-ink">Payday</span>
+            {payCfg.adjustForHolidays && (
+              <span className="ml-auto text-xs text-ink-faint">adjusted for weekends/holidays</span>
+            )}
+          </p>
+        )}
+        {selectedHols.map((h) => (
+          <p
+            key={h.name}
+            className="mb-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm"
+            style={{ background: tint(HOLIDAY_COLOR, 0.14) }}
+          >
+            <span className="text-base leading-none">🎉</span>
+            <span className="min-w-0 flex-1 font-medium text-ink">{h.name}</span>
+            <span className="shrink-0 text-xs text-ink-faint">{h.national ? 'National' : 'State'} holiday</span>
+          </p>
+        ))}
         {selectedEvents.length === 0 ? (
-          <p className="text-sm text-ink-faint">Nothing scheduled. Pick another day, or add an event below.</p>
+          selectedHols.length === 0 && !selectedIsPayday ? (
+            <p className="text-sm text-ink-faint">Nothing scheduled. Pick another day, or add an event below.</p>
+          ) : null
         ) : (
           <ul className="space-y-2">
             {selectedEvents.map((e) => {
@@ -376,6 +450,29 @@ export function CalendarScreen() {
           </p>
         )}
       </Card>
+
+      {/* Public holidays + payday for the period */}
+      {marks.length > 0 && (
+        <Card title={view === 'month' ? 'Holidays & payday this month' : 'Holidays & payday this week'}>
+          <ul className="space-y-2">
+            {marks.map((m) => (
+              <li key={m.dateISO} className="flex items-center gap-2 text-sm">
+                <span className="shrink-0 text-base leading-none">{m.hols.length ? '🎉' : '💰'}</span>
+                <span className="min-w-0 flex-1 truncate text-ink">
+                  {[...(m.isPayday ? ['Payday'] : []), ...m.hols.map((h) => h.name)].join(' · ')}
+                </span>
+                <span className="shrink-0 text-xs text-ink-faint">
+                  {longDate(m.dateISO, { weekday: 'short', day: 'numeric', month: 'short' })}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[11px] text-ink-faint">
+            {state ? '' : 'Set your state in Settings → Profile for state holidays and the right weekend. '}
+            Public holidays are reminders — they don't move money.
+          </p>
+        </Card>
+      )}
 
       {/* Full period list */}
       <Card title={view === 'month' ? 'Everything this month' : 'Everything this week'}>

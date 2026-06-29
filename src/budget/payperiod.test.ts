@@ -17,6 +17,30 @@ describe('paydayForMonth', () => {
   it('honours per-month overrides', () => {
     expect(paydayForMonth(cfg({ customDates: { '2026-07': '2026-07-30' } }), 2026, 7)).toBe('2026-07-30');
   });
+
+  describe('adjustForHolidays', () => {
+    it('does not shift when the flag is off', () => {
+      // 25 Jul 2026 is a Saturday, but with the flag off the payday stays put.
+      expect(paydayForMonth(cfg({ dayOfMonth: 25 }), 2026, 7)).toBe('2026-07-25');
+    });
+    it('brings a weekend payday forward to the preceding working day', () => {
+      // 25 Jul 2026 (Sat) → Fri 24 Jul.
+      expect(paydayForMonth(cfg({ dayOfMonth: 25, adjustForHolidays: true }), 2026, 7)).toBe('2026-07-24');
+    });
+    it('chains back over a holiday adjoining the weekend', () => {
+      // 1 Jun 2026 = Agong birthday (Mon) → back over Wesak (Sun) + Sat → Fri 29 May.
+      expect(paydayForMonth(cfg({ dayOfMonth: 1, adjustForHolidays: true }), 2026, 6)).toBe('2026-05-29');
+    });
+    it('never moves an explicit per-month override', () => {
+      const c = cfg({ adjustForHolidays: true, customDates: { '2026-07': '2026-07-25' } });
+      expect(paydayForMonth(c, 2026, 7)).toBe('2026-07-25'); // Saturday, but explicit
+    });
+    it('uses the state weekend rule (Sunday is a working day in Johor)', () => {
+      // 26 Jul 2026 is a Sunday. Sat/Sun states shift to Fri 24; Johor (Fri/Sat) keeps it.
+      expect(paydayForMonth(cfg({ dayOfMonth: 26, adjustForHolidays: true }), 2026, 7)).toBe('2026-07-24');
+      expect(paydayForMonth(cfg({ dayOfMonth: 26, adjustForHolidays: true }), 2026, 7, 'johor')).toBe('2026-07-26');
+    });
+  });
 });
 
 describe('currentPayPeriod', () => {

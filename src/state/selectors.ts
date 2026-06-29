@@ -54,7 +54,7 @@ export function deriveFinances(data: AppData, todayISO: string): Finances {
     allocation.variableSen,
     allocation.savingsSen,
   );
-  const payPeriod = currentPayPeriod(data.payPeriod ?? DEFAULT_PAY_PERIOD, todayISO);
+  const payPeriod = currentPayPeriod(data.payPeriod ?? DEFAULT_PAY_PERIOD, todayISO, data.profile?.state);
   const spending = computeSpendingPlan(
     allocation.variableSen,
     data.variableCategories,

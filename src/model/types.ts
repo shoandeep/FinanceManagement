@@ -49,6 +49,42 @@ export interface PayPeriodConfig {
   dayOfMonth: number;
   /** Overrides for specific months: 'YYYY-MM' → actual payday ISO date 'YYYY-MM-DD'. */
   customDates: Record<string, string>;
+  /**
+   * When a 'sameDay' payday lands on a weekend or public holiday, bring it
+   * forward to the preceding working day (how most Malaysian employers pay).
+   * Weekend + holiday rules follow the profile's state. Optional → off when absent.
+   */
+  adjustForHolidays?: boolean;
+}
+
+/**
+ * Malaysian state / federal territory. Drives the weekend convention and which
+ * public holidays apply (national + that state's). Stored on the user profile.
+ */
+export type MalaysianState =
+  | 'johor'
+  | 'kedah'
+  | 'kelantan'
+  | 'melaka'
+  | 'negeri-sembilan'
+  | 'pahang'
+  | 'penang'
+  | 'perak'
+  | 'perlis'
+  | 'selangor'
+  | 'terengganu'
+  | 'sabah'
+  | 'sarawak'
+  | 'kuala-lumpur'
+  | 'labuan'
+  | 'putrajaya';
+
+/** A light personal profile — used to localise weekends, holidays and copy. */
+export interface Profile {
+  /** Work/residence state. Selects the weekend convention + state public holidays. */
+  state?: MalaysianState;
+  /** Optional free-text: employer / where the company is. Display + future use. */
+  employer?: string;
 }
 
 export interface EmergencyFund {
@@ -162,4 +198,6 @@ export interface AppData {
   materializedKeys: string[];
   /** How the budgeting period is defined (calendar month vs pay cycle). */
   payPeriod: PayPeriodConfig;
+  /** Light personal profile (state/region, employer) — localises weekends & holidays. */
+  profile?: Profile;
 }

@@ -6,6 +6,7 @@ import { formatSen, type Sen } from '../../money/money';
 import type { DeductionLine } from '../../core/netpay';
 import type { PayOverrides } from '../../core/netpay';
 import type { PayPeriodConfig, PayPeriodMode } from '../../model/types';
+import { weekendLabel } from '../../budget/holidays';
 import { Card, Field, MoneyInput, Money, Select, Button, Disclaimer } from '../components';
 
 const PAY_MODES: { id: PayPeriodMode; label: string }[] = [
@@ -73,6 +74,25 @@ function PaySchedule() {
             }
             className="mt-1 w-24 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm tabular-nums text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
           />
+        </label>
+      )}
+
+      {cfg.mode === 'sameDay' && (
+        <label className="mt-3 flex items-start gap-2 text-xs text-ink-soft">
+          <input
+            type="checkbox"
+            checked={!!cfg.adjustForHolidays}
+            aria-label="Move payday earlier on weekends and public holidays"
+            onChange={(e) => setCfg((c) => void (c.adjustForHolidays = e.target.checked))}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-line-strong text-primary focus:ring-2 focus:ring-ring/40"
+          />
+          <span>
+            Move payday earlier if it lands on a weekend or public holiday
+            <span className="mt-0.5 block text-ink-faint">
+              Brings it forward to the preceding working day, using your {weekendLabel(data.profile?.state)}{' '}
+              weekend &amp; Malaysian public holidays. Set your state in Settings → Profile.
+            </span>
+          </span>
         </label>
       )}
 

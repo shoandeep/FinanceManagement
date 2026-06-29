@@ -4,7 +4,9 @@ import { deriveFinances } from '../state/selectors';
 import { todayISO } from '../budget/dates';
 import { exportCashflowCsv, exportExpensesCsv, exportIncomeCsv } from '../export/csv';
 import { downloadReport, printReport } from '../export/report';
-import { Button, TextInput, Toggle } from './components';
+import { Button, TextInput, Toggle, Select } from './components';
+import { MALAYSIAN_STATES, weekendLabel } from '../budget/holidays';
+import type { MalaysianState, Profile } from '../model/types';
 
 export function Settings({ onClose }: { onClose: () => void }) {
   const {
@@ -41,6 +43,12 @@ export function Settings({ onClose }: { onClose: () => void }) {
   if (!data) return null;
   const f = deriveFinances(data, todayISO());
   const isAccount = session === 'account';
+  const state = data.profile?.state;
+  const setProfile = (fn: (p: Profile) => void) =>
+    update((d) => {
+      if (!d.profile) d.profile = {};
+      fn(d.profile);
+    });
 
   function handlePrint() {
     setPrintMsg(null);
@@ -119,6 +127,54 @@ export function Settings({ onClose }: { onClose: () => void }) {
             ✕
           </button>
         </div>
+
+        {/* Profile / region */}
+        <section className="space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-ink">Profile</h3>
+            <p className="mt-0.5 text-xs text-ink-faint">
+              Your state sets your weekend ({weekendLabel(state)}) and which public holidays appear on
+              the calendar — and lets payday auto-adjust around them.
+            </p>
+          </div>
+          <label className="block text-xs text-ink-soft">
+            State / region
+            <Select
+              className="mt-1"
+              aria-label="State or region"
+              value={state ?? ''}
+              onChange={(e) =>
+                setProfile((p) => {
+                  const v = e.target.value;
+                  if (v) p.state = v as MalaysianState;
+                  else delete p.state;
+                })
+              }
+            >
+              <option value="">Not set (assumes Sat &amp; Sun, national holidays)</option>
+              {MALAYSIAN_STATES.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className="block text-xs text-ink-soft">
+            Employer <span className="text-ink-faint">(optional)</span>
+            <TextInput
+              className="mt-1"
+              placeholder="e.g. Acme Sdn Bhd"
+              value={data.profile?.employer ?? ''}
+              onChange={(e) =>
+                setProfile((p) => {
+                  const v = e.target.value;
+                  if (v) p.employer = v;
+                  else delete p.employer;
+                })
+              }
+            />
+          </label>
+        </section>
 
         {/* Download & print */}
         <section id="settings-download" className="space-y-3 scroll-mt-4">
