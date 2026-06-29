@@ -316,23 +316,22 @@ export function CalendarScreen() {
                   c.inMonth ? '' : 'opacity-40'
                 } ${selected ? 'bg-primary/10 ring-2 ring-primary' : c.isToday ? 'ring-2 ring-gold' : 'ring-1 ring-line hover:ring-gold/40'}`}
               >
-                <div className="flex items-center justify-between gap-1">
-                  <span className={`text-xs leading-none ${c.isToday ? 'font-bold text-gold' : 'text-ink'}`}>{c.day}</span>
-                  {bal != null && (
-                    <span
-                      className={`rounded px-1 text-[9px] font-semibold leading-tight tabular-nums ${
-                        isLow
-                          ? 'bg-positive/20 text-positive'
-                          : bal < 0
-                            ? 'text-negative'
-                            : 'bg-surface-2 text-ink-faint'
-                      }`}
-                    >
-                      {compactRM(bal)}
-                      {isLow ? ' ☀️' : ''}
-                    </span>
-                  )}
-                </div>
+                <span className={`text-xs leading-none ${c.isToday ? 'font-bold text-gold' : 'text-ink'}`}>{c.day}</span>
+                {bal != null && (
+                  <span
+                    className={`mt-0.5 block w-full truncate rounded px-0.5 text-center text-[9px] font-semibold leading-tight tabular-nums ${
+                      isLow
+                        ? 'bg-positive/20 text-positive'
+                        : bal < 0
+                          ? 'bg-negative/15 text-negative'
+                          : 'bg-surface-2 text-ink-faint'
+                    }`}
+                    title={`Projected balance ${compactRM(bal)}`}
+                  >
+                    {compactRM(bal).replace('RM', '')}
+                    {isLow ? ' ☀️' : ''}
+                  </span>
+                )}
                 <div className="mt-0.5 space-y-0.5">
                   {isPayday && (
                     <div
