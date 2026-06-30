@@ -5,6 +5,7 @@
  * Pure + deterministic so it can be filtered and totalled in the UI and tested.
  */
 import type { AppData, EventType } from '../model/types';
+import { PAYMENT_LABEL } from './payments';
 
 export type TxnDirection = 'in' | 'out';
 
@@ -61,7 +62,7 @@ export function buildTransactions(data: AppData): Txn[] {
         amountSen: e.amountSen,
         direction: 'out',
         title: e.note?.trim() || cat,
-        typeLabel: cat,
+        typeLabel: e.method ? `${cat} · ${PAYMENT_LABEL[e.method]}` : cat,
         typeKey: e.categoryId || 'uncat',
         source: 'expense',
       });

@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import { useVault } from '../state/VaultContext';
 import { todayISO } from '../budget/dates';
 import { newId } from '../model/defaults';
-import { recentMerchants } from '../budget/capture';
 import { applyTransferEffect } from '../budget/transfers';
+import { PAYMENT_METHODS } from '../budget/payments';
 import { formatSen, type Sen } from '../money/money';
-import type { Transfer, TransferKind } from '../model/types';
+import type { Transfer, TransferKind, PaymentMethod } from '../model/types';
 import { Button } from './components';
+
+// Remembered across captures in this session so repeat logging is one tap fewer.
+let lastMethod: PaymentMethod | undefined;
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'back'];
 const MAX_SEN = 99_999_999; // RM999,999.99 cap
@@ -38,6 +41,7 @@ export function QuickCapture({
   const [mode, setMode] = useState<Mode>('spend');
   const [cents, setCents] = useState<Sen>(initialCents);
   const [categoryId, setCategoryId] = useState<string>(''); // '' = unsorted
+  const [method, setMethod] = useState<PaymentMethod | undefined>(lastMethod); // how it was paid
   const [targetId, setTargetId] = useState<string>(''); // save/invest target account
   const [note, setNote] = useState(initialNote);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -56,7 +60,6 @@ export function QuickCapture({
 
   if (!data) return null;
   const cats = data.variableCategories;
-  const merchants = recentMerchants(data.expenses, 6);
   const investments = data.investments.filter((i) => i.name.trim());
   const accounts = (data.cashAccounts ?? []).filter((a) => a.name.trim());
 
@@ -88,8 +91,10 @@ export function QuickCapture({
           categoryId,
           amountSen: cents,
           dateISO: todayISO(),
+          ...(method ? { method } : {}),
           ...(note.trim() ? { note: note.trim() } : {}),
         });
+        lastMethod = method; // remember for the next capture
         return;
       }
       const kind: TransferKind = mode === 'save' ? 'cash' : 'investment';
@@ -179,6 +184,24 @@ export function QuickCapture({
           </div>
         )}
 
+        {/* Spend: how it was paid (tap again to clear) */}
+        {mode === 'spend' && (
+          <>
+            <Label>Paid with</Label>
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {PAYMENT_METHODS.map((pm) => (
+                <Chip
+                  key={pm.id}
+                  active={method === pm.id}
+                  onClick={() => setMethod(method === pm.id ? undefined : pm.id)}
+                >
+                  {pm.emoji} {pm.label}
+                </Chip>
+              ))}
+            </div>
+          </>
+        )}
+
         {/* Save / Invest: target + optional source account */}
         {mode !== 'spend' &&
           (targets.length === 0 ? (
@@ -200,23 +223,14 @@ export function QuickCapture({
             </>
           ))}
 
-        {/* Note + recent merchants (merchants only for spend) */}
+        {/* Vendor / note */}
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder={mode === 'spend' ? 'Note / merchant (optional)' : 'Note (optional)'}
-          aria-label="Note"
+          placeholder={mode === 'spend' ? 'Vendor (optional) — e.g. Grab, Tesco' : 'Note (optional)'}
+          aria-label="Vendor or note"
           className="mb-2 w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-ink outline-none focus:border-gold focus:ring-2 focus:ring-ring/30"
         />
-        {mode === 'spend' && merchants.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {merchants.map((m) => (
-              <Chip key={m} active={note.trim().toLowerCase() === m.toLowerCase()} onClick={() => setNote(m)}>
-                {m}
-              </Chip>
-            ))}
-          </div>
-        )}
 
         {/* Number pad */}
         <div className="grid grid-cols-3 gap-2">

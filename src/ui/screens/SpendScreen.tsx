@@ -5,6 +5,8 @@ import { todayISO, parseISO, daysInMonth as daysInMonthOf, dayOfMonth, addDaysIS
 import { newId } from '../../model/defaults';
 import { formatSen, type Sen } from '../../money/money';
 import type { SpendPeriod } from '../../budget/spendingPlan';
+import type { PaymentMethod } from '../../model/types';
+import { paymentTotals, amountsDue, PAYMENT_METHODS, PAYMENT_EMOJI } from '../../budget/payments';
 import { Card, Money, MoneyInput, TextInput, Select, Button, Stat, ProgressBar, Disclaimer } from '../components';
 import { CategoryDonut, DailyBars } from '../charts';
 import { Transactions } from '../Transactions';
@@ -52,6 +54,7 @@ export function SpendScreen() {
   const [period, setPeriod] = useState<SpendPeriod>('day');
   const [amount, setAmount] = useState<Sen>(0);
   const [categoryId, setCategoryId] = useState<string>('');
+  const [method, setMethod] = useState<PaymentMethod | undefined>(undefined);
   const [date, setDate] = useState<string>(today);
   const [note, setNote] = useState('');
   const [txnsOpen, setTxnsOpen] = useState(false);
@@ -92,12 +95,17 @@ export function SpendScreen() {
         categoryId: activeCat,
         amountSen: amount,
         dateISO: date,
+        ...(method ? { method } : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       }),
     );
     setAmount(0);
     setNote('');
   }
+
+  // Payment-method analytics.
+  const methodTotals = paymentTotals(monthExpenses);
+  const due = amountsDue(data.expenses);
 
   const shareSum = cats.reduce((s, c) => s + c.sharePercent, 0);
 
@@ -153,6 +161,19 @@ export function SpendScreen() {
         </div>
       </Card>
 
+      {due.totalSen > 0 && (
+        <Card title="To settle" className="border-warning/30">
+          <div className="grid grid-cols-2 gap-3">
+            <Stat label="💳 Credit card" value={<Money sen={due.creditSen} />} tone={due.creditSen > 0 ? 'negative' : 'default'} />
+            <Stat label="⏳ BNPL" value={<Money sen={due.bnplSen} />} tone={due.bnplSen > 0 ? 'negative' : 'default'} />
+          </div>
+          <p className="mt-2 text-[11px] text-ink-faint">
+            Running total charged to credit card &amp; BNPL — what you still owe. Settling these down
+            (logging repayments) is coming next.
+          </p>
+        </Card>
+      )}
+
       <Card title="Where your money goes">
         <CategoryDonut items={donutItems} />
       </Card>
@@ -189,6 +210,33 @@ export function SpendScreen() {
         </ul>
       </Card>
 
+      {methodTotals.totalSen > 0 && (
+        <Card title="This month by payment method">
+          <ul className="space-y-2">
+            {PAYMENT_METHODS.filter((pm) => methodTotals.byMethod[pm.id] > 0).map((pm) => {
+              const v = methodTotals.byMethod[pm.id];
+              const pct = methodTotals.totalSen > 0 ? Math.round((v / methodTotals.totalSen) * 100) : 0;
+              return (
+                <li key={pm.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-ink-soft">
+                    {pm.emoji} {pm.label}
+                  </span>
+                  <span className="tabular-nums text-ink">
+                    {formatSen(v)} <span className="text-xs text-ink-faint">· {pct}%</span>
+                  </span>
+                </li>
+              );
+            })}
+            {methodTotals.untaggedSen > 0 && (
+              <li className="flex items-center justify-between gap-2 text-sm text-ink-faint">
+                <span>Untagged</span>
+                <span className="tabular-nums">{formatSen(methodTotals.untaggedSen)}</span>
+              </li>
+            )}
+          </ul>
+        </Card>
+      )}
+
       <Card title="Log an expense">
         <div className="grid grid-cols-2 gap-2">
           <label className="text-xs text-ink-soft">
@@ -218,9 +266,37 @@ export function SpendScreen() {
             />
           </label>
           <label className="text-xs text-ink-soft">
-            Note (optional)
-            <TextInput className="mt-1" value={note} onChange={(e) => setNote(e.target.value)} />
+            Vendor / note
+            <TextInput
+              className="mt-1"
+              value={note}
+              placeholder="e.g. Grab, Tesco"
+              onChange={(e) => setNote(e.target.value)}
+            />
           </label>
+        </div>
+        <div className="mt-3">
+          <p className="text-xs text-ink-soft">Paid with</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {PAYMENT_METHODS.map((pm) => {
+              const on = method === pm.id;
+              return (
+                <button
+                  key={pm.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setMethod(on ? undefined : pm.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    on
+                      ? 'bg-primary text-primary-contrast'
+                      : 'bg-surface-2 text-ink-soft ring-1 ring-inset ring-line hover:text-ink'
+                  }`}
+                >
+                  {pm.emoji} {pm.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
         <Button variant="primary" className="mt-3 w-full" onClick={logExpense} disabled={amount <= 0}>
           Add expense
@@ -243,6 +319,7 @@ export function SpendScreen() {
               <li key={e.id} className="flex items-center justify-between gap-2 py-2 text-sm">
                 <div className="min-w-0">
                   <p className="truncate text-ink-soft">
+                    {e.method ? `${PAYMENT_EMOJI[e.method]} ` : ''}
                     {catName(e.categoryId)}
                     {e.note ? <span className="text-ink-faint"> · {e.note}</span> : null}
                   </p>

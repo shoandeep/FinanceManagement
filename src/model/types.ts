@@ -136,6 +136,12 @@ export interface VariableCategory {
   sharePercent: number;
 }
 
+/**
+ * How a payment was made. Debit/e-wallet/cash leave your money immediately;
+ * credit & BNPL are deferred (you settle them later) so they're tracked as owed.
+ */
+export type PaymentMethod = 'cash' | 'debit' | 'ewallet' | 'credit' | 'bnpl';
+
 export interface Expense {
   id: string;
   categoryId: string;
@@ -143,6 +149,8 @@ export interface Expense {
   /** ISO date (YYYY-MM-DD) the expense occurred. */
   dateISO: string;
   note?: string;
+  /** How it was paid (debit/e-wallet/cash/credit/BNPL). Optional — unset = untagged. */
+  method?: PaymentMethod;
   /** Set when auto-created from a recurring calendar event (provenance/badge). */
   sourceEventId?: string;
 }
