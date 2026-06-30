@@ -15,6 +15,10 @@ export function applyTransferEffect(draft: AppData, t: Transfer, sign: 1 | -1): 
   if (t.kind === 'cash') {
     const acc = draft.cashAccounts.find((x) => x.id === t.targetId);
     if (acc) acc.balanceSen += delta;
+  } else if (t.kind === 'debt') {
+    // A repayment lowers what you owe (reverse adds it back).
+    const debt = (draft.debts ?? []).find((x) => x.id === t.targetId);
+    if (debt) debt.balanceSen -= delta;
   } else {
     const inv = draft.investments.find((x) => x.id === t.targetId);
     if (inv) inv.currentSen += delta;

@@ -110,23 +110,36 @@ export interface Investment {
 }
 
 /** Which tracker a logged transfer feeds. */
-export type TransferKind = 'cash' | 'investment';
+export type TransferKind = 'cash' | 'investment' | 'debt';
 
 /**
- * A logged manual money movement into one of your accounts — e.g. "moved RM500
- * from my paycheck into RYT Bank" (cash) or "into ASB" (investment). Increments
- * the target account's balance; kept as editable history so you can see and
- * correct what you've moved without re-typing running totals.
+ * A logged manual money movement. For 'cash'/'investment' it raises that
+ * account's balance (e.g. "moved RM500 from my paycheck into RYT Bank"); for
+ * 'debt' it is a repayment that lowers what you owe on a card/BNPL. Kept as
+ * editable history so you can see and correct it without re-typing totals.
  */
 export interface Transfer {
   id: string;
   kind: TransferKind;
-  /** Cash account id (cash) or Investment id (investment) the money landed in. */
+  /** Cash account / Investment / DebtAccount id the money moved to. */
   targetId: string;
   amountSen: number;
   /** ISO date (YYYY-MM-DD) the transfer was made. */
   dateISO: string;
   note?: string;
+}
+
+/** A revolving debt you owe and pay down — a credit card or a BNPL plan. */
+export type DebtKind = 'credit' | 'bnpl';
+
+export interface DebtAccount {
+  id: string;
+  name: string;
+  kind: DebtKind;
+  /** Current outstanding balance you owe (manually set; reduced by repayments). */
+  balanceSen: number;
+  /** Optional due date for the current bill (YYYY-MM-DD). */
+  dueDate?: string;
 }
 
 export interface VariableCategory {
@@ -228,6 +241,8 @@ export interface AppData {
   payPeriod: PayPeriodConfig;
   /** Light personal profile (state/region, employer) — localises weekends & holidays. */
   profile?: Profile;
-  /** Logged manual transfers into savings/investment/emergency trackers. */
+  /** Logged manual transfers (cash/investment deposits, debt repayments). */
   transfers: Transfer[];
+  /** Credit cards & BNPL plans you owe and pay down. */
+  debts: DebtAccount[];
 }

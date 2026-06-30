@@ -42,6 +42,7 @@ export function createDefaultAppData(): AppData {
     materializedKeys: [],
     payPeriod: { mode: 'calendarMonth', dayOfMonth: 25, customDates: {} },
     transfers: [],
+    debts: [],
   };
 }
 

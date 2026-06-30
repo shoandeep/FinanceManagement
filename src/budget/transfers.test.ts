@@ -10,6 +10,7 @@ function seed(): AppData {
     { id: 'c2', name: 'TNG eWallet', type: 'ewallet', balanceSen: 0, ratePercent: 0 },
   ];
   d.investments = [{ id: 'i1', name: 'ASB', currentSen: 200_000 }];
+  d.debts = [{ id: 'd1', name: 'Maybank Visa', kind: 'credit', balanceSen: 100_000 }];
   return d;
 }
 
@@ -35,6 +36,14 @@ describe('applyTransferEffect', () => {
     const d = seed();
     applyTransferEffect(d, tx({ kind: 'investment', targetId: 'i1', amountSen: 30_000 }), 1);
     expect(d.investments[0].currentSen).toBe(230_000);
+  });
+  it('a debt repayment lowers the balance, reverse adds it back', () => {
+    const d = seed();
+    const t = tx({ kind: 'debt', targetId: 'd1', amountSen: 25_000 });
+    applyTransferEffect(d, t, 1);
+    expect(d.debts[0].balanceSen).toBe(75_000); // 100k owed - 25k repaid
+    applyTransferEffect(d, t, -1);
+    expect(d.debts[0].balanceSen).toBe(100_000);
   });
   it('is a no-op when the target no longer exists', () => {
     const d = seed();

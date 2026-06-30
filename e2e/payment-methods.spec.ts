@@ -19,13 +19,10 @@ test('payment method: tag expenses, see breakdown + due @390', async ({ page }) 
   await addExpense('100', 'Credit');
   await addExpense('50', 'E-wallet');
 
-  // "To settle" reflects credit due.
-  const settle = page.locator('section', { hasText: 'To settle' });
-  await expect(settle.getByText('RM100.00')).toBeVisible();
-
-  // Payment-method breakdown lists both methods.
+  // Payment-method breakdown lists both methods with their totals.
   const breakdown = page.locator('section', { hasText: 'This month by payment method' });
   await expect(breakdown.getByText('Credit')).toBeVisible();
+  await expect(breakdown.getByText('RM100.00')).toBeVisible();
   await expect(breakdown.getByText('E-wallet')).toBeVisible();
 
   // Expense rows carry the method emoji.

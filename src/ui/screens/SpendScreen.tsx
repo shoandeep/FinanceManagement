@@ -1,15 +1,31 @@
 import { useState } from 'react';
 import { useVault } from '../../state/VaultContext';
 import { deriveFinances } from '../../state/selectors';
-import { todayISO, parseISO, daysInMonth as daysInMonthOf, dayOfMonth, addDaysISO } from '../../budget/dates';
+import { todayISO, parseISO, daysInMonth as daysInMonthOf, dayOfMonth, addDaysISO, daysBetweenISO } from '../../budget/dates';
 import { newId } from '../../model/defaults';
 import { formatSen, type Sen } from '../../money/money';
 import type { SpendPeriod } from '../../budget/spendingPlan';
-import type { PaymentMethod } from '../../model/types';
-import { paymentTotals, amountsDue, PAYMENT_METHODS, PAYMENT_EMOJI } from '../../budget/payments';
+import type { PaymentMethod, DebtKind } from '../../model/types';
+import { paymentTotals, PAYMENT_METHODS, PAYMENT_EMOJI } from '../../budget/payments';
 import { Card, Money, MoneyInput, TextInput, Select, Button, Stat, ProgressBar, Disclaimer } from '../components';
 import { CategoryDonut, DailyBars } from '../charts';
 import { Transactions } from '../Transactions';
+import { TransferLog } from '../TransferLog';
+
+const DEBT_KINDS: { id: DebtKind; label: string }[] = [
+  { id: 'credit', label: 'Credit card' },
+  { id: 'bnpl', label: 'BNPL' },
+];
+
+/** Due-date status for a debt's current bill. */
+function dueStatus(dueDate: string | undefined, today: string): { text: string; tone: string } | null {
+  if (!dueDate) return null;
+  const days = daysBetweenISO(today, dueDate);
+  if (days < 0) return { text: `Overdue ${-days}d`, tone: 'text-negative' };
+  if (days === 0) return { text: 'Due today', tone: 'text-negative' };
+  if (days <= 7) return { text: `Due in ${days}d`, tone: 'text-warning' };
+  return { text: `Due ${new Date(`${dueDate}T00:00:00`).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}`, tone: 'text-ink-faint' };
+}
 
 const shortDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
@@ -105,7 +121,8 @@ export function SpendScreen() {
 
   // Payment-method analytics.
   const methodTotals = paymentTotals(monthExpenses);
-  const due = amountsDue(data.expenses);
+  const debts = data.debts ?? [];
+  const totalOwedSen = debts.reduce((s, d) => s + d.balanceSen, 0);
 
   const shareSum = cats.reduce((s, c) => s + c.sharePercent, 0);
 
@@ -161,18 +178,112 @@ export function SpendScreen() {
         </div>
       </Card>
 
-      {due.totalSen > 0 && (
-        <Card title="To settle" className="border-warning/30">
-          <div className="grid grid-cols-2 gap-3">
-            <Stat label="💳 Credit card" value={<Money sen={due.creditSen} />} tone={due.creditSen > 0 ? 'negative' : 'default'} />
-            <Stat label="⏳ BNPL" value={<Money sen={due.bnplSen} />} tone={due.bnplSen > 0 ? 'negative' : 'default'} />
-          </div>
-          <p className="mt-2 text-[11px] text-ink-faint">
-            Running total charged to credit card &amp; BNPL — what you still owe. Settling these down
-            (logging repayments) is coming next.
+      <Card
+        title="Cards & BNPL"
+        className={totalOwedSen > 0 ? 'border-warning/30' : ''}
+        action={
+          <Button
+            variant="ghost"
+            className="px-2 py-1 text-xs"
+            onClick={() => update((d) => d.debts.push({ id: newId(), name: '', kind: 'credit', balanceSen: 0 }))}
+          >
+            + Add
+          </Button>
+        }
+      >
+        {debts.length === 0 ? (
+          <p className="text-sm text-ink-faint">
+            Add your credit cards &amp; BNPL apps (Atome, SPayLater, …) with what you currently owe and
+            the due date. Then log repayments from the <span className="font-semibold text-gold">＋</span>{' '}
+            (Repay) to draw them down.
           </p>
-        </Card>
-      )}
+        ) : (
+          <>
+            <div className="mb-3 flex items-center justify-between border-b border-line pb-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-ink-faint">Total owed</span>
+              <span className="font-bold tabular-nums text-ink">
+                <Money sen={totalOwedSen} />
+              </span>
+            </div>
+            <ul className="space-y-3">
+              {debts.map((debt) => {
+                const patchDebt = (fn: (a: typeof debt) => void) =>
+                  update((d) => {
+                    const it = d.debts.find((x) => x.id === debt.id);
+                    if (it) fn(it);
+                  });
+                const status = dueStatus(debt.dueDate, today);
+                return (
+                  <li key={debt.id} className="rounded-xl border border-line p-3">
+                    <div className="flex items-center gap-2">
+                      <TextInput
+                        aria-label="Debt name"
+                        placeholder={debt.kind === 'bnpl' ? 'e.g. Atome' : 'e.g. Maybank Visa'}
+                        value={debt.name}
+                        onChange={(e) => patchDebt((a) => (a.name = e.target.value))}
+                      />
+                      <Select
+                        aria-label="Debt type"
+                        className="w-28"
+                        value={debt.kind}
+                        onChange={(e) => patchDebt((a) => (a.kind = e.target.value as DebtKind))}
+                      >
+                        {DEBT_KINDS.map((k) => (
+                          <option key={k.id} value={k.id}>
+                            {k.label}
+                          </option>
+                        ))}
+                      </Select>
+                      <Button
+                        variant="danger"
+                        className="px-2"
+                        aria-label={`Remove ${debt.name || 'debt'}`}
+                        onClick={() =>
+                          update((d) => {
+                            d.debts = d.debts.filter((x) => x.id !== debt.id);
+                            d.transfers = d.transfers.filter((x) => !(x.kind === 'debt' && x.targetId === debt.id));
+                          })
+                        }
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <label className="text-xs text-ink-faint">
+                        Owed now
+                        <div className="mt-1">
+                          <MoneyInput valueSen={debt.balanceSen} onChangeSen={(sen) => patchDebt((a) => (a.balanceSen = sen))} />
+                        </div>
+                      </label>
+                      <label className="text-xs text-ink-faint">
+                        Due date
+                        <input
+                          type="date"
+                          value={debt.dueDate ?? ''}
+                          aria-label="Due date"
+                          onChange={(e) =>
+                            patchDebt((a) => {
+                              if (e.target.value) a.dueDate = e.target.value;
+                              else delete a.dueDate;
+                            })
+                          }
+                          className="mt-1 w-full rounded-lg border border-line bg-surface px-2 py-2 text-sm text-ink outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+                        />
+                      </label>
+                    </div>
+                    {status && <p className={`mt-1.5 text-[11px] font-medium ${status.tone}`}>{status.text}</p>}
+                    <TransferLog kind="debt" targetId={debt.id} />
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-3 text-[11px] text-ink-faint">
+              Set what you owe now; log repayments from the ＋ (Repay) to lower it. Tip: tag card/BNPL
+              spending in “Paid with” so you can see how fast it builds up.
+            </p>
+          </>
+        )}
+      </Card>
 
       <Card title="Where your money goes">
         <CategoryDonut items={donutItems} />

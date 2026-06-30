@@ -14,11 +14,12 @@ let lastMethod: PaymentMethod | undefined;
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'back'];
 const MAX_SEN = 99_999_999; // RM999,999.99 cap
 
-type Mode = 'spend' | 'save' | 'invest';
+type Mode = 'spend' | 'save' | 'invest' | 'debt';
 const MODES: { id: Mode; label: string }[] = [
   { id: 'spend', label: 'Spend' },
   { id: 'save', label: 'Save' },
   { id: 'invest', label: 'Invest' },
+  { id: 'debt', label: 'Repay' },
 ];
 
 /**
@@ -62,15 +63,17 @@ export function QuickCapture({
   const cats = data.variableCategories;
   const investments = data.investments.filter((i) => i.name.trim());
   const accounts = (data.cashAccounts ?? []).filter((a) => a.name.trim());
+  const debts = (data.debts ?? []).filter((d) => d.name.trim());
 
-  // Targets for the active mode: cash accounts (Save) or investments (Invest).
-  const targets = mode === 'save' ? accounts : mode === 'invest' ? investments : [];
+  // Targets for the active mode: cash accounts (Save), investments (Invest) or debts (Repay).
+  const targets = mode === 'save' ? accounts : mode === 'invest' ? investments : mode === 'debt' ? debts : [];
   const targetValid = mode === 'spend' || targets.some((t) => t.id === targetId);
 
   function switchMode(m: Mode) {
     setMode(m);
     if (m === 'save') setTargetId(accounts[0]?.id ?? '');
     else if (m === 'invest') setTargetId(investments[0]?.id ?? '');
+    else if (m === 'debt') setTargetId(debts[0]?.id ?? '');
   }
 
   function press(k: string) {
@@ -97,7 +100,7 @@ export function QuickCapture({
         lastMethod = method; // remember for the next capture
         return;
       }
-      const kind: TransferKind = mode === 'save' ? 'cash' : 'investment';
+      const kind: TransferKind = mode === 'save' ? 'cash' : mode === 'invest' ? 'investment' : 'debt';
       const t: Transfer = {
         id: newId(),
         kind,
@@ -121,9 +124,15 @@ export function QuickCapture({
   }
   const save = () => commit(true);
 
-  const targetLabel = mode === 'invest' ? 'Into investment' : 'Into account';
+  const targetLabel = mode === 'invest' ? 'Into investment' : mode === 'debt' ? 'Towards' : 'Into account';
   const flashText =
-    mode === 'spend' ? '✓ Saved — add another' : mode === 'invest' ? '✓ Added to investment' : '✓ Added to account';
+    mode === 'spend'
+      ? '✓ Saved — add another'
+      : mode === 'invest'
+        ? '✓ Added to investment'
+        : mode === 'debt'
+          ? '✓ Repayment logged'
+          : '✓ Added to account';
 
   return (
     <div
@@ -142,13 +151,13 @@ export function QuickCapture({
         </div>
 
         {/* Mode toggle */}
-        <div className="grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1 ring-1 ring-inset ring-line">
+        <div className="grid grid-cols-4 gap-1 rounded-xl bg-surface-2 p-1 ring-1 ring-inset ring-line">
           {MODES.map((m) => (
             <button
               key={m.id}
               onClick={() => switchMode(m.id)}
               aria-pressed={mode === m.id}
-              className={`rounded-lg py-1.5 text-sm font-semibold transition ${
+              className={`rounded-lg py-1.5 text-xs font-semibold transition ${
                 mode === m.id ? 'bg-primary text-primary-contrast' : 'text-ink-faint hover:text-ink'
               }`}
             >
@@ -208,7 +217,9 @@ export function QuickCapture({
             <p className="mb-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-ink-soft">
               {mode === 'invest'
                 ? 'Add an investment in Save → Investments first, then log transfers here.'
-                : 'Add your bank / e-wallet accounts in Save → Advanced first, then log transfers here.'}
+                : mode === 'debt'
+                  ? 'Add a card / BNPL in Spend → Cards & BNPL first, then log repayments here.'
+                  : 'Add your bank / e-wallet accounts in Save → Advanced first, then log transfers here.'}
             </p>
           ) : (
             <>
@@ -262,7 +273,9 @@ export function QuickCapture({
         <p className="mt-2 text-center text-[11px] text-ink-faint">
           {mode === 'spend'
             ? 'No category? It waits in your Inbox to file later.'
-            : 'Raises that account’s balance and saves an editable entry in Save.'}
+            : mode === 'debt'
+              ? 'Lowers what you owe and saves an editable entry in Spend.'
+              : 'Raises that account’s balance and saves an editable entry in Save.'}
         </p>
       </div>
     </div>
