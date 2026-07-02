@@ -17,13 +17,13 @@ test('landing → save on device → net pay → log expense → persists across
   await expect(page.getByText("Today's spending")).toBeVisible();
 
   // Enter gross pay and verify the statutory estimate + net pay.
-  await page.getByRole('button', { name: 'Pay', exact: true }).click();
+  await page.getByRole('button', { name: 'Salary', exact: true }).click();
   await page.getByLabel('Gross monthly pay').fill('8000');
   await expect(page.getByText('Estimate RM880.00')).toBeVisible(); // EPF 11%
   await expect(page.getByText('RM6,564.18')).toBeVisible(); // net pay
 
   // Log an expense; the month's expense list should reflect it.
-  await page.getByRole('button', { name: 'Spend', exact: true }).click();
+  await page.getByRole('button', { name: 'Expenses', exact: true }).click();
   await page.getByLabel('Amount').fill('50');
   await page.getByRole('button', { name: 'Add expense' }).click();
   await expect(page.getByText("This month's expenses (1)")).toBeVisible();
@@ -33,7 +33,7 @@ test('landing → save on device → net pay → log expense → persists across
   await page.getByRole('button', { name: 'Unlock my saved data' }).click();
   await page.getByLabel('Passphrase', { exact: true }).fill(PASSPHRASE);
   await page.getByRole('button', { name: 'Unlock' }).click();
-  await page.getByRole('button', { name: 'Spend', exact: true }).click();
+  await page.getByRole('button', { name: 'Expenses', exact: true }).click();
   await expect(page.getByText("This month's expenses (1)")).toBeVisible();
 });
 
@@ -43,7 +43,7 @@ test('guest mode is ephemeral — nothing persists after reload', async ({ page 
 
   // Guest banner is shown (sidebar on desktop / header on mobile) and data is not saved.
   await expect(page.getByText('Guest mode — nothing is saved.').first()).toBeVisible();
-  await page.getByRole('button', { name: 'Pay', exact: true }).click();
+  await page.getByRole('button', { name: 'Salary', exact: true }).click();
   await page.getByLabel('Gross monthly pay').fill('8000');
   await expect(page.getByText('RM6,564.18')).toBeVisible();
 

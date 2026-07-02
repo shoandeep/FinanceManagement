@@ -4,6 +4,7 @@ import { deriveFinances } from '../state/selectors';
 import { todayISO } from '../budget/dates';
 import { exportCashflowCsv, exportExpensesCsv, exportIncomeCsv } from '../export/csv';
 import { downloadReport, printReport } from '../export/report';
+import { downloadPdf } from '../export/pdf';
 import { Button, TextInput, Toggle, Select } from './components';
 import { MALAYSIAN_STATES, weekendLabel } from '../budget/holidays';
 import type { MalaysianState, Profile } from '../model/types';
@@ -185,10 +186,22 @@ export function Settings({ onClose }: { onClose: () => void }) {
               sent anywhere.
             </p>
           </div>
+          <Button
+            variant="primary"
+            className="w-full"
+            onClick={() => {
+              setPrintMsg(null);
+              downloadPdf(data, f).catch((err: unknown) => {
+                setPrintMsg(
+                  err instanceof Error ? err.message : 'PDF generation failed — try Download as HTML.',
+                );
+              });
+            }}
+          >
+            ⤓ Download PDF
+          </Button>
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="primary" onClick={() => downloadReport(data, f)}>
-              ⤓ Download summary
-            </Button>
+            <Button onClick={() => downloadReport(data, f)}>⤓ Download as HTML</Button>
             <Button onClick={handlePrint}>🖨 Print / PDF</Button>
           </div>
           {printMsg && <p className="text-xs text-warning">{printMsg}</p>}

@@ -19,7 +19,7 @@ test('transactions view filters expenses (out) + transfers (in) @390', async ({ 
   await dlg.getByRole('button', { name: 'Save', exact: true }).last().click();
 
   // An expense (money out): Spend → log RM50.
-  await nav.getByRole('button', { name: 'Spend', exact: true }).click();
+  await nav.getByRole('button', { name: 'Expenses', exact: true }).click();
   const amt = page.getByPlaceholder('0.00').first();
   await amt.click();
   await amt.fill('50');

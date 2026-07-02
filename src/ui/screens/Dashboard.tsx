@@ -41,44 +41,42 @@ export function Dashboard({
         </Card>
       )}
 
-      <Card className="break-inside-avoid lg:mb-4">
+      <section className="silk-panel kain-edge break-inside-avoid rounded-2xl bg-primary p-4 lg:mb-4">
         <div className="flex items-end justify-between">
-          <Stat
-            label="Estimated net pay / month"
-            value={<Money sen={f.pay.netSen} />}
-            sub={`Gross ${formatSen(f.pay.grossSen)}`}
-          />
-          <span className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[11px] font-semibold text-gold">
+          <div className="min-w-0">
+            <p className="text-[0.7rem] font-medium uppercase tracking-[0.08em] text-primary-contrast/60">
+              Estimated net pay / month
+            </p>
+            <p className="mt-1 text-base font-bold leading-tight tracking-tight tabular-nums text-primary-contrast sm:text-lg">
+              {formatSen(f.pay.netSen)}
+            </p>
+            <p className="mt-0.5 text-xs text-primary-contrast/60">
+              Gross {formatSen(f.pay.grossSen)}
+            </p>
+          </div>
+          <span className="rounded-full border border-primary-contrast/25 bg-primary-contrast/10 px-2 py-0.5 text-[11px] font-semibold text-primary-contrast">
             {f.pay.netOverridden ? 'From payslip' : 'Estimate'}
           </span>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4">
-          <Stat label="Fixed costs" value={<Money sen={f.totalFixedSen} />} tone="muted" />
-          <Stat label="Left after fixed" value={<Money sen={f.disposableSen} />} tone="positive" />
+          <div className="min-w-0">
+            <p className="text-[0.7rem] font-medium uppercase tracking-[0.08em] text-primary-contrast/60">
+              Fixed costs
+            </p>
+            <p className="mt-1 text-base font-bold leading-tight tracking-tight tabular-nums text-primary-contrast/80 sm:text-lg">
+              {formatSen(f.totalFixedSen)}
+            </p>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[0.7rem] font-medium uppercase tracking-[0.08em] text-primary-contrast/60">
+              Left after fixed
+            </p>
+            <p className="mt-1 text-base font-bold leading-tight tracking-tight tabular-nums text-primary-contrast sm:text-lg">
+              {formatSen(f.disposableSen)}
+            </p>
+          </div>
         </div>
-      </Card>
-
-      <Card title="Emergency fund" className="break-inside-avoid lg:mb-4">
-        <div className="flex items-center justify-between">
-          <Stat
-            label={`${f.emergency.monthsCovered.toFixed(1)} of ${data.emergencyFund.months} months covered`}
-            value={<Money sen={f.emergency.currentSen} />}
-            sub={`Target ${formatSen(f.emergency.targetSen)}`}
-          />
-          <Stat
-            label="Shortfall"
-            value={<Money sen={f.emergency.shortfallSen} />}
-            tone={f.emergency.funded ? 'positive' : 'negative'}
-          />
-        </div>
-        <div className="mt-3">
-          <ProgressBar
-            value={f.emergency.pctToTarget}
-            tone={f.emergency.funded ? 'emerald' : 'amber'}
-            label="Emergency fund progress"
-          />
-        </div>
-      </Card>
+      </section>
 
       <Card title="Today's spending" className="break-inside-avoid lg:mb-4" action={<a href="#" onClick={(e) => { e.preventDefault(); onGoToSpend(); }} className="text-xs font-semibold text-gold hover:underline">Details →</a>}>
         <div className="grid grid-cols-2 gap-4">

@@ -148,7 +148,7 @@ export function SpendScreen() {
         <PeriodSlider value={period} onChange={setPeriod} periods={PERIODS} />
         {isCycle && (
           <p className="mt-2 text-center text-[11px] text-ink-faint">
-            Pay cycle · {periodRange} · {plan.daysInMonth} days
+            Pay cycle &middot; {periodRange} &middot; {plan.daysInMonth} days
           </p>
         )}
         <div className="mt-4 grid grid-cols-2 gap-4">
@@ -176,6 +176,72 @@ export function SpendScreen() {
             {formatSen(plan.spentMonthSen)} / {formatSen(plan.monthlyBudgetSen)}
           </span>
         </div>
+      </Card>
+
+      <Card title="Log an expense">
+        <div className="grid grid-cols-2 gap-2">
+          <label className="text-xs text-ink-soft">
+            Amount
+            <div className="mt-1">
+              <MoneyInput valueSen={amount} onChangeSen={setAmount} />
+            </div>
+          </label>
+          <label className="text-xs text-ink-soft">
+            Category
+            <Select className="mt-1" value={activeCat} onChange={(e) => setCategoryId(e.target.value)}>
+              {cats.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className="text-xs text-ink-soft">
+            Date
+            <input
+              type="date"
+              value={date}
+              max={today}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
+            />
+          </label>
+          <label className="text-xs text-ink-soft">
+            Vendor / note
+            <TextInput
+              className="mt-1"
+              value={note}
+              placeholder="e.g. Grab, Tesco"
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="mt-3">
+          <p className="text-xs text-ink-soft">Paid with</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {PAYMENT_METHODS.map((pm) => {
+              const on = method === pm.id;
+              return (
+                <button
+                  key={pm.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setMethod(on ? undefined : pm.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    on
+                      ? 'bg-primary text-primary-contrast'
+                      : 'bg-surface-2 text-ink-soft ring-1 ring-inset ring-line hover:text-ink'
+                  }`}
+                >
+                  {pm.emoji} {pm.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <Button variant="primary" className="mt-3 w-full" onClick={logExpense} disabled={amount <= 0}>
+          Add expense
+        </Button>
       </Card>
 
       <Card
@@ -279,7 +345,7 @@ export function SpendScreen() {
             </ul>
             <p className="mt-3 text-[11px] text-ink-faint">
               Set what you owe now; log repayments from the ＋ (Repay) to lower it. Tip: tag card/BNPL
-              spending in “Paid with” so you can see how fast it builds up.
+              spending in &ldquo;Paid with&rdquo; so you can see how fast it builds up.
             </p>
           </>
         )}
@@ -347,72 +413,6 @@ export function SpendScreen() {
           </ul>
         </Card>
       )}
-
-      <Card title="Log an expense">
-        <div className="grid grid-cols-2 gap-2">
-          <label className="text-xs text-ink-soft">
-            Amount
-            <div className="mt-1">
-              <MoneyInput valueSen={amount} onChangeSen={setAmount} />
-            </div>
-          </label>
-          <label className="text-xs text-ink-soft">
-            Category
-            <Select className="mt-1" value={activeCat} onChange={(e) => setCategoryId(e.target.value)}>
-              {cats.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label className="text-xs text-ink-soft">
-            Date
-            <input
-              type="date"
-              value={date}
-              max={today}
-              onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
-            />
-          </label>
-          <label className="text-xs text-ink-soft">
-            Vendor / note
-            <TextInput
-              className="mt-1"
-              value={note}
-              placeholder="e.g. Grab, Tesco"
-              onChange={(e) => setNote(e.target.value)}
-            />
-          </label>
-        </div>
-        <div className="mt-3">
-          <p className="text-xs text-ink-soft">Paid with</p>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {PAYMENT_METHODS.map((pm) => {
-              const on = method === pm.id;
-              return (
-                <button
-                  key={pm.id}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setMethod(on ? undefined : pm.id)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    on
-                      ? 'bg-primary text-primary-contrast'
-                      : 'bg-surface-2 text-ink-soft ring-1 ring-inset ring-line hover:text-ink'
-                  }`}
-                >
-                  {pm.emoji} {pm.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <Button variant="primary" className="mt-3 w-full" onClick={logExpense} disabled={amount <= 0}>
-          Add expense
-        </Button>
-      </Card>
 
       <Card
         title={`This month's expenses (${monthExpenses.length})`}
@@ -518,8 +518,8 @@ export function SpendScreen() {
       </Card>
 
       <Disclaimer>
-        Average shows an even split of your monthly budget (it won’t spike late in the month). “On
-        pace” distributes whatever budget is left over the days remaining.
+        Average shows an even split of your monthly budget (it won&apos;t spike late in the month). &ldquo;On
+        pace&rdquo; distributes whatever budget is left over the days remaining.
       </Disclaimer>
 
       {txnsOpen && <Transactions onClose={() => setTxnsOpen(false)} />}

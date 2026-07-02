@@ -6,12 +6,13 @@ test('debt tracker: add a card, repay via + draws it down @390', async ({ page }
   await page.goto('/');
   await page.getByRole('button', { name: 'Try it now — no signup' }).click();
   const nav = page.locator('nav[aria-label="Sections"]');
-  await nav.getByRole('button', { name: 'Spend', exact: true }).click();
+  await nav.getByRole('button', { name: 'Expenses', exact: true }).click();
 
   // Cards & BNPL → add a card with RM1,000 owed.
   await page.getByRole('button', { name: '+ Add' }).first().click(); // Cards & BNPL card
   await page.getByLabel('Debt name').fill('Maybank Visa');
-  const owed = page.getByPlaceholder('0.00').first();
+  const bnplSection = page.locator('section', { hasText: 'Cards & BNPL' });
+  const owed = bnplSection.getByPlaceholder('0.00').first();
   await owed.click();
   await owed.fill('1000');
   await owed.blur();

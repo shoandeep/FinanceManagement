@@ -5,7 +5,7 @@ test('payment method: tag expenses, see breakdown + due @390', async ({ page }) 
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Try it now — no signup' }).click();
-  await page.locator('nav[aria-label="Sections"]').getByRole('button', { name: 'Spend', exact: true }).click();
+  await page.locator('nav[aria-label="Sections"]').getByRole('button', { name: 'Expenses', exact: true }).click();
 
   const logCard = page.locator('section', { hasText: 'Log an expense' });
   const addExpense = async (amount: string, method: string) => {

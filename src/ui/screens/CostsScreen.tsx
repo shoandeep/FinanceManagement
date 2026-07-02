@@ -10,33 +10,49 @@ function AllocPctInput({
   label,
   value,
   amountSen,
+  baseSen,
   onChange,
 }: {
   label: string;
   value: number;
   amountSen: number;
+  baseSen: number;
   onChange: (n: number) => void;
 }) {
   return (
     <div className="rounded-xl border border-line bg-surface-2/50 p-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-ink">{label}</span>
-        <div className="flex items-center gap-1">
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={value}
-            onChange={(e) => onChange(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
-            aria-label={`${label} percent`}
-            className="w-16 rounded-lg border border-line-strong bg-surface px-2 py-1 text-right text-sm tabular-nums text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
-          />
-          <span className="text-sm text-ink-faint">%</span>
-        </div>
+      <span className="text-sm font-medium text-ink">{label}</span>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <label className="text-xs text-ink-faint">
+          %
+          <div className="mt-1 flex items-center gap-1">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={value}
+              onChange={(e) => onChange(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
+              aria-label={`${label} percent`}
+              className="w-full rounded-lg border border-line-strong bg-surface px-2 py-1 text-right text-sm tabular-nums text-ink outline-none transition focus:border-gold focus:ring-2 focus:ring-ring/30"
+            />
+            <span className="text-sm text-ink-faint">%</span>
+          </div>
+        </label>
+        <label className="text-xs text-ink-faint">
+          RM / month
+          <div className="mt-1">
+            <MoneyInput
+              valueSen={amountSen}
+              onChangeSen={(sen) => {
+                if (baseSen === 0) return;
+                onChange(Math.max(0, Math.min(100, Math.round((sen / baseSen) * 100))));
+              }}
+              aria-label={`${label} amount`}
+              disabled={baseSen === 0}
+            />
+          </div>
+        </label>
       </div>
-      <p className="mt-1 text-xs text-ink-faint">
-        = <Money sen={amountSen} /> / month
-      </p>
     </div>
   );
 }
@@ -169,18 +185,21 @@ export function CostsScreen() {
             label="Savings"
             value={a.savingsPct}
             amountSen={f.allocation.savingsSen}
+            baseSen={f.allocation.baseSen}
             onChange={(n) => update((d) => void (d.allocation.savingsPct = n))}
           />
           <AllocPctInput
             label="Investments"
             value={a.investmentsPct}
             amountSen={f.allocation.investmentsSen}
+            baseSen={f.allocation.baseSen}
             onChange={(n) => update((d) => void (d.allocation.investmentsPct = n))}
           />
           <AllocPctInput
             label="Variable spending"
             value={a.variablePct}
             amountSen={f.allocation.variableSen}
+            baseSen={f.allocation.baseSen}
             onChange={(n) => update((d) => void (d.allocation.variablePct = n))}
           />
         </div>

@@ -18,10 +18,10 @@ type TabId = 'home' | 'pay' | 'costs' | 'save' | 'spend' | 'calendar';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: '◎' },
-  { id: 'pay', label: 'Pay', icon: '₪' },
+  { id: 'pay', label: 'Salary', icon: '₪' },
   { id: 'costs', label: 'Budget', icon: '▤' },
   { id: 'save', label: 'Save', icon: '◆' },
-  { id: 'spend', label: 'Spend', icon: '◷' },
+  { id: 'spend', label: 'Expenses', icon: '◷' },
   { id: 'calendar', label: 'Calendar', icon: '▦' },
 ];
 
@@ -238,9 +238,9 @@ export function AppShell() {
         {/* Mobile bottom nav (unchanged on mobile; hidden on desktop) */}
         <nav
           aria-label="Sections"
-          className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 backdrop-blur-xl lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
         >
-          <ul className="mx-auto flex max-w-lg">
+          <ul className="mx-auto flex max-w-lg px-1 pl-[max(0.25rem,env(safe-area-inset-left))] pr-[max(0.25rem,env(safe-area-inset-right))]">
             {TABS.map((t) => {
               const active = tab === t.id;
               return (
@@ -277,7 +277,7 @@ export function AppShell() {
       <button
         onClick={() => openQuickAdd()}
         aria-label="Quick add expense"
-        className="fixed bottom-[5.25rem] right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-3xl font-light text-primary-contrast shadow-lg ring-1 ring-gold/30 transition active:scale-90 lg:hidden"
+        className="fixed bottom-[5.25rem] right-[max(1rem,env(safe-area-inset-right))] z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-3xl font-light text-primary-contrast shadow-lg ring-1 ring-gold/30 transition active:scale-90 lg:hidden"
       >
         <span aria-hidden="true" className="-mt-0.5 leading-none">＋</span>
       </button>
